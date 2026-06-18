@@ -1,0 +1,15 @@
+{
+  "name": "mis-finanzas",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Dashboard personal de finanzas — análisis de gastos, ingresos y flujo a partir de un Excel propio.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^6.4.8"
+  }
+}

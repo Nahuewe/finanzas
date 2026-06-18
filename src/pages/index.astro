@@ -1,0 +1,183 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+  <!-- ══════════════════════════════════════════
+       UPLOAD SCREEN
+  ══════════════════════════════════════════ -->
+  <div id="uploadScreen">
+    <div class="upload-kicker">libro de gastos personal</div>
+    <h1 class="upload-title">Mis Finanzas</h1>
+    <p class="upload-sub">Subí tu Excel exportado <strong>(Gastos · Ingresos · Transferencias)</strong> y obtené tu análisis completo al instante. Todo se procesa en tu navegador, nada se sube a un servidor.</p>
+
+    <div class="upload-box" id="uploadBox">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" />
+      <div class="upload-icon">📂</div>
+      <p><strong>Tocá o arrastrá tu archivo</strong><br />.xlsx con hojas Gastos / Ingresos / Transferencias</p>
+    </div>
+
+    <button class="demo-btn" id="demoBtn">▶ Usar datos de demo</button>
+
+    <div class="upload-spec">
+      <span class="spec-chip">Fecha y hora</span>
+      <span class="spec-chip">Categoría</span>
+      <span class="spec-chip">Cuenta</span>
+      <span class="spec-chip">Cantidad ARS</span>
+      <span class="spec-chip">Comentario</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       APP
+  ══════════════════════════════════════════ -->
+  <div id="app">
+    <header class="app-header">
+      <div class="logo">mis<span>finanzas</span></div>
+      <div id="dateRangeLabel"></div>
+      <button class="header-btn" id="reloadBtn">↑ Nuevo archivo</button>
+    </header>
+
+    <div class="filters-bar">
+      <span class="filter-label">AÑO</span>
+      <select class="filter-select narrow" id="filterYear"><option value="all">Todos</option></select>
+      <span class="filter-label">MES</span>
+      <select class="filter-select narrow" id="filterMonth"><option value="all">Todos</option></select>
+      <div class="sep"></div>
+      <span class="filter-label">PERÍODO</span>
+      <button class="filter-pill active" data-period="all">Todo</button>
+      <button class="filter-pill" data-period="6">6 meses</button>
+      <button class="filter-pill" data-period="3">3 meses</button>
+      <div class="sep"></div>
+      <span class="filter-label">CUENTA</span>
+      <select class="filter-select" id="filterAccount"><option value="all">Todas</option></select>
+      <span class="filter-label">CATEGORÍA</span>
+      <select class="filter-select" id="filterCategory"><option value="all">Todas</option></select>
+      <span class="filter-label">MONTO MÍN.</span>
+      <input class="filter-select narrow" id="filterMinAmount" type="number" placeholder="$0" min="0" step="1000" />
+      <div class="sep"></div>
+      <button class="reset-btn" id="resetFiltersBtn">✕ Limpiar</button>
+    </div>
+
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="resumen">📊 Resumen</button>
+      <button class="tab-btn" data-tab="gastos">💸 Gastos</button>
+      <button class="tab-btn" data-tab="ingresos">💵 Ingresos</button>
+      <button class="tab-btn" data-tab="flujo">📈 Flujo</button>
+      <button class="tab-btn" data-tab="ahorros">💡 Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
+    </nav>
+
+    <!-- ── RESUMEN ── -->
+    <div class="page active" id="page-resumen">
+      <div class="kpi-grid" id="kpiResumen"></div>
+      <div class="card card-mb">
+        <h3>Ingresos vs Gastos</h3>
+        <canvas id="chartResumen"></canvas>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Composición Ingresos</h3>
+          <canvas id="chartIngDonut"></canvas>
+        </div>
+        <div class="card">
+          <h3>Composición Gastos</h3>
+          <canvas id="chartGasDonut"></canvas>
+        </div>
+      </div>
+      <div class="card card-mb">
+        <h3>Heatmap Flujo Mensual</h3>
+        <div class="heatmap" id="heatmap"></div>
+      </div>
+    </div>
+
+    <!-- ── GASTOS ── -->
+    <div class="page" id="page-gastos">
+      <div class="kpi-grid" id="kpiGastos"></div>
+
+      <div class="card card-mb">
+        <h3>Evolución Mensual</h3>
+        <canvas id="chartGasMensual"></canvas>
+      </div>
+
+      <div class="card card-mb">
+        <h3>Comparativa Mes a Mes</h3>
+        <div class="mom-strip" id="gasMomStrip"></div>
+      </div>
+
+      <div class="card card-mb">
+        <h3>Por Categoría — tocá para ver el detalle</h3>
+        <div class="search-wrap">
+          <input class="search-input" id="gasCatSearch" type="text" placeholder="Buscar categoría…" />
+        </div>
+        <div class="acc" id="gasAccordion"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Suscripciones</h3>
+          <div class="receipt-list" id="gasSubsList"></div>
+        </div>
+        <div class="card">
+          <h3>Top 10 Gastos</h3>
+          <div class="receipt-list" id="gasTopList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INGRESOS ── -->
+    <div class="page" id="page-ingresos">
+      <div class="kpi-grid" id="kpiIngresos"></div>
+      <div class="card card-mb">
+        <h3>Evolución de Ingresos</h3>
+        <canvas id="chartIngMensual"></canvas>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Por Categoría</h3>
+          <div class="bar-rows" id="ingBarras"></div>
+        </div>
+        <div class="card">
+          <h3>Detalle por Categoría</h3>
+          <div class="tbl-scroll"><table class="tbl" id="tblIngDetalle"></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── FLUJO ── -->
+    <div class="page" id="page-flujo">
+      <div class="kpi-grid" id="kpiFlujo"></div>
+      <div class="card card-mb">
+        <h3>Flujo Neto Mensual</h3>
+        <canvas id="chartFlujo"></canvas>
+      </div>
+      <div class="card">
+        <h3>Tabla Completa</h3>
+        <div class="tbl-scroll"><table class="tbl" id="tblFlujo"></table></div>
+      </div>
+    </div>
+
+    <!-- ── AHORROS ── -->
+    <div class="page" id="page-ahorros">
+      <div class="sec-title">⚡ Oportunidades de ahorro — calculadas sobre tus datos</div>
+      <div id="savingsGoal"></div>
+      <div class="savings-list" id="savingsList"></div>
+      <div class="sec-title" style="margin-top:24px">🚨 Alertas</div>
+      <div id="alertsList"></div>
+      <div class="sec-title">✅ Lo que hacés bien</div>
+      <div id="positivesList"></div>
+      <div class="sec-title">🎯 Plan de acción</div>
+      <div id="planList"></div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Procesando tu archivo…</div>
+  </div>
+
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+    import '../scripts/app.js';
+  </script>
+</Layout>
