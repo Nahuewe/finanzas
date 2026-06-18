@@ -111,7 +111,7 @@ let FILTERS = { year: 'all', month: 'all', period: 'all', account: 'all', catego
 let CHARTS = {};
 let CAT_SEARCH = '';
 const OPEN_CATS = new Set();
-const SKIP_CATS = new Set(['Tarjeta de Credito', 'Prestamo', 'Trabajo']);
+const SKIP_CATS = new Set(['']);
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 // ══════════════════════════════════════════
