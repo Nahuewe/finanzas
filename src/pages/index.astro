@@ -56,8 +56,11 @@ import Layout from '../layouts/Layout.astro';
       <span class="filter-label">MONTO MÍN.</span>
       <input class="filter-select narrow" id="filterMinAmount" type="number" placeholder="$0" min="0" step="1000" />
       <div class="sep"></div>
+      <button class="exclude-toggle-btn" id="excludeToggle">⊘ Excluir categorías</button>
       <button class="reset-btn" id="resetFiltersBtn">✕ Limpiar</button>
     </div>
+
+    <div class="exclude-panel" id="excludePanel"></div>
 
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="resumen">📊 Resumen</button>
