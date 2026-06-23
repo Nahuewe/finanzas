@@ -4,6 +4,7 @@ import { renderCatAccordion } from './renderers/gastos.js';
 import { groupBy, groupByMon, sortedEntries } from './helpers.js';
 import { processFile, initApp } from './upload.js';
 import { DEMO_DATA } from './demo.js';
+import { initComentariosListeners } from './renderers/comentarios.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('fileInput').addEventListener('change', (e) => {
@@ -98,4 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
       excludeToggle.textContent = open ? '✕ Cerrar' : '⊘ Excluir categorías';
     });
   }
+
+  initComentariosListeners();
 });

@@ -3,6 +3,8 @@ import { renderGastos } from './gastos.js';
 import { renderIngresos } from './ingresos.js';
 import { renderFlujo } from './flujo.js';
 import { renderAhorros } from './ahorros.js';
+import { renderComentarios } from './comentarios.js';
+import { renderCuentas } from './cuentas.js';
 
 export function renderAll() {
   renderResumen();
@@ -10,6 +12,8 @@ export function renderAll() {
   renderIngresos();
   renderFlujo();
   renderAhorros();
+  renderComentarios();
+  renderCuentas();
 }
 
-export { renderResumen, renderGastos, renderIngresos, renderFlujo, renderAhorros };
+export { renderResumen, renderGastos, renderIngresos, renderFlujo, renderAhorros, renderComentarios, renderCuentas };

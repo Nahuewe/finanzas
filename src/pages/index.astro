@@ -68,6 +68,8 @@ import Layout from '../layouts/Layout.astro';
       <button class="tab-btn" data-tab="ingresos">💵 Ingresos</button>
       <button class="tab-btn" data-tab="flujo">📈 Flujo</button>
       <button class="tab-btn" data-tab="ahorros">💡 Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
+      <button class="tab-btn" data-tab="comentarios">💬 Comentarios</button>
+      <button class="tab-btn" data-tab="cuentas">🏦 Cuentas</button>
     </nav>
 
     <!-- ── RESUMEN ── -->
@@ -170,6 +172,23 @@ import Layout from '../layouts/Layout.astro';
       <div id="positivesList"></div>
       <div class="sec-title">🎯 Plan de acción</div>
       <div id="planList"></div>
+    </div>
+
+    <!-- ── COMENTARIOS ── -->
+    <div class="page" id="page-comentarios">
+      <div class="com-toolbar">
+        <input class="search-input" id="comSearch" type="text" placeholder="Buscar comentario o categoría…" />
+        <select class="filter-select" id="comType">
+          <option value="gastos">Gastos</option>
+          <option value="ingresos">Ingresos</option>
+        </select>
+      </div>
+      <div id="comCatList"></div>
+    </div>
+
+    <!-- ── CUENTAS ── -->
+    <div class="page" id="page-cuentas">
+      <div id="cuentasPanel"></div>
     </div>
   </div>
 

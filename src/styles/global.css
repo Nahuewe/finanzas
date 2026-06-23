@@ -417,4 +417,140 @@
     animation: spin .7s linear infinite;
   }
   .loading-text { @apply text-ink-dim text-[.84rem] font-medium; }
+
+  /* ── Comentarios ── */
+  .com-toolbar {
+    @apply flex gap-2.5 mb-4 flex-wrap;
+  }
+  .com-toolbar .search-input { @apply flex-1 min-w-[180px]; }
+
+  .com-cat-block {
+    @apply bg-bg-raised border border-line rounded-lg mb-2.5 overflow-hidden;
+  }
+  .com-cat-head {
+    @apply flex items-center gap-3 px-4 py-3 cursor-pointer select-none transition-colors duration-150;
+  }
+  .com-cat-head:hover { background: rgba(167,139,250,.06); }
+  .com-cat-name { @apply flex-1 font-bold text-ink text-[.88rem]; }
+  .com-cat-count {
+    font-family: theme('fontFamily.mono');
+    @apply text-ink-faint text-[.7rem] flex-shrink-0;
+  }
+  .com-cat-total {
+    font-family: theme('fontFamily.mono');
+    @apply text-purple font-bold text-[.82rem] flex-shrink-0;
+  }
+  .com-cat-chevron {
+    @apply text-ink-faint text-[.7rem] transition-transform duration-200 flex-shrink-0;
+  }
+  .com-cat-block.open .com-cat-chevron { transform: rotate(90deg); }
+  .com-cat-body {
+    @apply hidden border-t border-dashed border-line-soft px-4 pb-3;
+    animation: fadeIn .2s ease;
+  }
+  .com-cat-block.open .com-cat-body { @apply block; }
+
+  .com-row {
+    @apply flex items-baseline gap-2.5 py-[8px] border-b border-dashed border-line-soft text-[.82rem];
+  }
+  .com-row:last-child { @apply border-b-0; }
+  .com-text { @apply flex-1 text-ink font-medium overflow-hidden text-ellipsis whitespace-nowrap; }
+  .com-meta {
+    font-family: theme('fontFamily.mono');
+    @apply text-ink-faint text-[.7rem] flex-shrink-0;
+  }
+  .com-amt {
+    font-family: theme('fontFamily.mono');
+    color: theme('colors.rose.fin');
+    @apply font-bold flex-shrink-0 whitespace-nowrap text-[.82rem];
+  }
+  mark.com-highlight {
+    background: rgba(167,139,250,.25);
+    color: theme('colors.purple.DEFAULT');
+    border-radius: 2px;
+  }
+
+  /* ── Cuentas ── */
+  .cuentas-header {
+    @apply mb-4 flex flex-col gap-3;
+  }
+  .cuentas-tip {
+    @apply text-ink-faint text-[.8rem] leading-relaxed bg-bg-raised border border-line rounded-lg px-4 py-3;
+  }
+  .cuentas-total {
+    @apply flex items-center justify-between bg-bg-raised border border-purple/30 rounded-lg px-4 py-3;
+  }
+  .cuentas-total-label {
+    font-family: theme('fontFamily.mono');
+    @apply text-ink-faint text-[.72rem] tracking-[.04em];
+  }
+  .cuentas-total-val {
+    font-family: theme('fontFamily.mono');
+    @apply font-extrabold text-[1.05rem];
+  }
+  .cuentas-total-val.pos { color: theme('colors.green.DEFAULT'); }
+  .cuentas-total-val.neg { color: theme('colors.rose.fin'); }
+
+  .cuentas-list { @apply flex flex-col gap-2.5 mb-4; }
+
+  .cuenta-row {
+    @apply bg-bg-raised border border-line rounded-lg px-4 py-3.5 flex flex-col gap-2.5;
+  }
+  .cuenta-name { @apply font-bold text-ink text-[.9rem]; }
+  .cuenta-fields { @apply flex gap-3 flex-wrap items-end; }
+
+  .cuenta-field { @apply flex flex-col gap-1; }
+  .cuenta-field-label {
+    font-family: theme('fontFamily.mono');
+    @apply text-ink-faint text-[.68rem] tracking-[.05em] font-semibold uppercase;
+  }
+  .cuenta-input {
+    @apply bg-bg border border-line rounded px-3 py-[6px] text-[.84rem] text-ink
+           font-medium outline-none w-[150px];
+    font-family: theme('fontFamily.mono');
+  }
+  .cuenta-input:focus { @apply border-purple; }
+
+  .cuenta-stat { @apply flex flex-col gap-0.5; }
+  .cuenta-stat-label {
+    font-family: theme('fontFamily.mono');
+    @apply text-ink-faint text-[.68rem] tracking-[.05em] font-semibold uppercase;
+  }
+  .cuenta-stat-val {
+    font-family: theme('fontFamily.mono');
+    @apply font-bold text-[.88rem];
+    color: var(--color-ink-faint);
+  }
+  .cuenta-stat.pos .cuenta-stat-val { color: theme('colors.green.DEFAULT'); }
+  .cuenta-stat.neg .cuenta-stat-val { color: theme('colors.rose.fin'); }
+
+  .cuenta-detail { @apply flex gap-2 flex-wrap; }
+  .cuenta-detail-chip {
+    font-family: theme('fontFamily.mono');
+    @apply text-[.68rem] rounded-full px-2.5 py-1 border font-semibold;
+  }
+  .cuenta-detail-chip.neg {
+    @apply border-rose-fin/30 text-rose-fin bg-rose-fin/5;
+    color: theme('colors.rose.fin');
+    border-color: rgba(251,113,133,.3);
+    background: rgba(251,113,133,.06);
+  }
+  .cuenta-detail-chip.pos {
+    border-color: rgba(74,222,128,.3);
+    color: theme('colors.green.DEFAULT');
+    background: rgba(74,222,128,.06);
+  }
+  .cuenta-corte-chip {
+    font-family: theme('fontFamily.mono');
+    @apply text-[.68rem] rounded-full px-2.5 py-1 border font-semibold;
+    border-color: rgba(167,139,250,.25);
+    color: theme('colors.purple.DEFAULT');
+    background: rgba(167,139,250,.06);
+  }
+
+  .cuentas-clear-btn {
+    @apply bg-transparent border border-line-soft rounded text-ink-faint px-3 py-[6px] text-[.74rem]
+           cursor-pointer font-semibold transition-all duration-200;
+  }
+  .cuentas-clear-btn:hover { border-color: theme('colors.rose.fin'); color: theme('colors.rose.fin'); }
 }
