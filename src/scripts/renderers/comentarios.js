@@ -3,6 +3,7 @@ import { fmtFull, sortedEntries } from '../helpers.js';
 
 let COM_SEARCH = '';
 let COM_TYPE = 'gastos';
+const OPEN_COMS = new Set();
 
 export function renderComentarios() {
   buildComentariosUI();
@@ -21,10 +22,10 @@ function buildComentariosUI() {
     const com = (r.comentario || '').trim();
     if (!com) return;
     if (!bycat[cat]) bycat[cat] = {};
-    if (!bycat[cat][com]) bycat[cat][com] = { total: 0, count: 0, dates: [] };
+    if (!bycat[cat][com]) bycat[cat][com] = { total: 0, count: 0, txs: [] };
     bycat[cat][com].total += r.monto;
     bycat[cat][com].count++;
-    bycat[cat][com].dates.push(r.fecha);
+    bycat[cat][com].txs.push({ fecha: r.fecha, monto: r.monto, comentario: r.comentario });
   });
 
   const cats = Object.entries(bycat)
@@ -53,15 +54,30 @@ function buildComentariosUI() {
 
     const commentRows = rows.map(([com, total]) => {
       const info = comments[com];
-      const lastDate = [...info.dates].sort().reverse()[0];
+      const comKey = `${cat}|||${com}`;
+      const isOpen = OPEN_COMS.has(comKey);
       const highlighted = search && com.toLowerCase().includes(search)
         ? com.replace(new RegExp(`(${search})`, 'gi'), '<mark class="com-highlight">$1</mark>')
         : com;
+
+      const txsSorted = [...info.txs].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+      const txRows = txsSorted.map((tx) => `
+        <div class="com-tx-row">
+          <div class="com-tx-date">${tx.fecha || '—'}</div>
+          <div class="com-tx-comment">${tx.comentario || '—'}</div>
+          <div class="com-tx-amt">${fmtFull(tx.monto)}</div>
+        </div>`).join('');
+
+      const safeKey = comKey.replace(/'/g, "\\'");
       return `
-        <div class="com-row">
-          <div class="com-text">${highlighted}</div>
-          <div class="com-meta">${info.count}x · ${lastDate?.slice(0) || '—'}</div>
-          <div class="com-amt">${fmtFull(total)}</div>
+        <div class="com-row ${info.count > 1 ? 'com-row-clickable' : ''} ${isOpen ? 'open' : ''}" ${info.count > 1 ? `onclick="toggleComRow('${safeKey}')"` : ''}>
+          <div class="com-row-head">
+            <div class="com-text">${highlighted}</div>
+            <div class="com-meta">${info.count}x</div>
+            <div class="com-amt">${fmtFull(total)}</div>
+            ${info.count > 1 ? '<div class="com-row-chevron">▸</div>' : ''}
+          </div>
+          ${info.count > 1 ? `<div class="com-tx-list">${txRows}</div>` : ''}
         </div>`;
     }).join('');
 
@@ -83,6 +99,25 @@ window.toggleComCat = function(cat) {
   const block = document.querySelector(`.com-cat-block[id="comcat-${cat}"]`);
   if (!block) return;
   block.classList.toggle('open');
+};
+
+window.toggleComRow = function(comKey) {
+  if (OPEN_COMS.has(comKey)) {
+    OPEN_COMS.delete(comKey);
+  } else {
+    OPEN_COMS.add(comKey);
+  }
+
+  const openCats = new Set(
+    [...document.querySelectorAll('.com-cat-block.open')].map((el) => el.id.replace('comcat-', ''))
+  );
+
+  buildComentariosUI();
+
+  openCats.forEach((cat) => {
+    const block = document.querySelector(`.com-cat-block[id="comcat-${cat}"]`);
+    if (block) block.classList.add('open');
+  });
 };
 
 export function initComentariosListeners() {

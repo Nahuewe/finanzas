@@ -3,9 +3,6 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-  <!-- ══════════════════════════════════════════
-       UPLOAD SCREEN
-  ══════════════════════════════════════════ -->
   <div id="uploadScreen">
     <div class="upload-kicker">libro de gastos personal</div>
     <h1 class="upload-title">Mis Finanzas</h1>
@@ -27,10 +24,7 @@ import Layout from '../layouts/Layout.astro';
       <span class="spec-chip">Comentario</span>
     </div>
   </div>
-
-  <!-- ══════════════════════════════════════════
-       APP
-  ══════════════════════════════════════════ -->
+  
   <div id="app">
     <header class="app-header">
       <div class="logo">mis<span>finanzas</span></div>
@@ -67,6 +61,7 @@ import Layout from '../layouts/Layout.astro';
       <button class="tab-btn" data-tab="gastos">💸 Gastos</button>
       <button class="tab-btn" data-tab="ingresos">💵 Ingresos</button>
       <button class="tab-btn" data-tab="flujo">📈 Flujo</button>
+      <button class="tab-btn" data-tab="proyeccion">🔮 Proyección</button>
       <button class="tab-btn" data-tab="ahorros">💡 Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
       <button class="tab-btn" data-tab="comentarios">💬 Comentarios</button>
       <button class="tab-btn" data-tab="cuentas">🏦 Cuentas</button>
@@ -92,6 +87,10 @@ import Layout from '../layouts/Layout.astro';
       <div class="card card-mb">
         <h3>Heatmap Flujo Mensual</h3>
         <div class="heatmap" id="heatmap"></div>
+      </div>
+      <div class="card card-mb">
+        <h3>Acumulado del Mes Actual vs Anterior</h3>
+        <div id="acumuladoMesWrap"></div>
       </div>
     </div>
 
@@ -127,6 +126,10 @@ import Layout from '../layouts/Layout.astro';
           <div class="receipt-list" id="gasTopList"></div>
         </div>
       </div>
+      <div class="card card-mb" style="margin-top:16px">
+        <h3>Gastos Recurrentes Detectados</h3>
+        <div id="gasRecurrentesList"></div>
+      </div>
     </div>
 
     <!-- ── INGRESOS ── -->
@@ -158,6 +161,23 @@ import Layout from '../layouts/Layout.astro';
       <div class="card">
         <h3>Tabla Completa</h3>
         <div class="tbl-scroll"><table class="tbl" id="tblFlujo"></table></div>
+      </div>
+    </div>
+
+    <!-- ── PROYECCIÓN ── -->
+    <div class="page" id="page-proyeccion">
+      <div class="kpi-grid" id="kpiProyeccion"></div>
+      <div class="card card-mb">
+        <h3>Histórico + Proyección 6 meses</h3>
+        <canvas id="chartProyeccion"></canvas>
+      </div>
+      <div class="card card-mb">
+        <h3>Neto Acumulado Proyectado</h3>
+        <canvas id="chartAcumuladoProy"></canvas>
+      </div>
+      <div class="card">
+        <h3>Detalle Mensual</h3>
+        <div class="tbl-scroll" id="proyeccionTabla"></div>
       </div>
     </div>
 

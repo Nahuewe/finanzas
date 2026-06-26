@@ -1,8 +1,7 @@
 import {
   RAW, FILTERS, SKIP_CATS, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS,
-  setFiltered, setFilters, setCatSearch, OPEN_CATS,
+  setFiltered, setFilters, OPEN_CATS,
 } from './state.js';
-import { groupByMon } from './helpers.js';
 import { renderAll } from './renderers/index.js';
 import { buildExcludePanel } from './renderers/excludePanel.js';
 

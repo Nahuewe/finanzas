@@ -451,9 +451,24 @@
   .com-cat-block.open .com-cat-body { @apply block; }
 
   .com-row {
-    @apply flex items-baseline gap-2.5 py-[8px] border-b border-dashed border-line-soft text-[.82rem];
+    @apply flex flex-col border-b border-dashed border-line-soft text-[.82rem];
   }
   .com-row:last-child { @apply border-b-0; }
+  .com-row-head {
+    @apply flex items-baseline gap-2.5 py-[8px];
+  }
+  .com-row-clickable .com-row-head {
+    @apply cursor-pointer rounded transition-colors duration-150;
+  }
+  .com-row-clickable .com-row-head:hover { background: rgba(167,139,250,.06); }
+  .com-row-clickable.open .com-row-head { @apply pb-1; }
+  .com-row-chevron {
+    font-size: .65rem;
+    color: var(--color-ink-faint);
+    transition: transform .2s;
+    flex-shrink: 0;
+  }
+  .com-row-clickable.open .com-row-chevron { transform: rotate(90deg); }
   .com-text { @apply flex-1 text-ink font-medium overflow-hidden text-ellipsis whitespace-nowrap; }
   .com-meta {
     font-family: theme('fontFamily.mono');
@@ -463,6 +478,28 @@
     font-family: theme('fontFamily.mono');
     color: theme('colors.rose.fin');
     @apply font-bold flex-shrink-0 whitespace-nowrap text-[.82rem];
+  }
+  .com-tx-list {
+    @apply hidden flex-col pb-2 pl-2;
+    border-left: 2px solid rgba(167,139,250,.2);
+    margin-left: 4px;
+    margin-bottom: 6px;
+  }
+  .com-row-clickable.open .com-tx-list { @apply flex; }
+  .com-tx-row {
+    @apply flex items-baseline gap-2 py-[5px] border-b border-line-soft last:border-0;
+  }
+  .com-tx-date {
+    font-family: theme('fontFamily.mono');
+    @apply text-[.68rem] text-ink-faint flex-shrink-0 w-24;
+  }
+  .com-tx-comment {
+    @apply flex-1 text-[.78rem] text-ink overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .com-tx-amt {
+    font-family: theme('fontFamily.mono');
+    @apply text-[.78rem] font-semibold flex-shrink-0;
+    color: theme('colors.rose.fin');
   }
   mark.com-highlight {
     background: rgba(167,139,250,.25);
@@ -488,7 +525,7 @@
     font-family: theme('fontFamily.mono');
     @apply font-extrabold text-[1.05rem];
   }
-  .cuentas-total-val.pos { color: theme('colors.green.DEFAULT'); }
+  .cuentas-total-val.pos { color: theme('colors.green.500'); }
   .cuentas-total-val.neg { color: theme('colors.rose.fin'); }
 
   .cuentas-list { @apply flex flex-col gap-2.5 mb-4; }
@@ -521,7 +558,7 @@
     @apply font-bold text-[.88rem];
     color: var(--color-ink-faint);
   }
-  .cuenta-stat.pos .cuenta-stat-val { color: theme('colors.green.DEFAULT'); }
+  .cuenta-stat.pos .cuenta-stat-val { color: theme('colors.green.500'); }
   .cuenta-stat.neg .cuenta-stat-val { color: theme('colors.rose.fin'); }
 
   .cuenta-detail { @apply flex gap-2 flex-wrap; }
@@ -537,7 +574,7 @@
   }
   .cuenta-detail-chip.pos {
     border-color: rgba(74,222,128,.3);
-    color: theme('colors.green.DEFAULT');
+    color: theme('colors.green.500');
     background: rgba(74,222,128,.06);
   }
   .cuenta-corte-chip {
@@ -553,4 +590,27 @@
            cursor-pointer font-semibold transition-all duration-200;
   }
   .cuentas-clear-btn:hover { border-color: theme('colors.rose.fin'); color: theme('colors.rose.fin'); }
+
+  /* ── Acumulado del mes ── */
+  .acum-kpis { @apply flex gap-3 flex-wrap mb-4; }
+  .acum-kpi {
+    @apply flex flex-col gap-1 rounded-lg px-4 py-3 border border-line-soft;
+    background: var(--surface-card);
+    min-width: 140px;
+  }
+  .acum-kpi-label { font-family: theme('fontFamily.mono'); @apply text-[.65rem] uppercase tracking-wider; color: var(--color-ink-faint); }
+  .acum-kpi-val   { font-family: theme('fontFamily.mono'); @apply text-[.95rem] font-bold; }
+
+  /* ── Gastos Recurrentes ── */
+  .recur-row { @apply flex items-center gap-4 py-3 border-b border-line-soft last:border-0 flex-wrap; }
+  .recur-main { @apply flex flex-col gap-0.5 flex-1 min-w-0; }
+  .recur-name { font-family: theme('fontFamily.mono'); @apply text-[.84rem] font-semibold truncate; color: var(--color-ink); }
+  .recur-cat  { font-family: theme('fontFamily.mono'); @apply text-[.68rem]; color: var(--color-ink-faint); }
+  .recur-stats { @apply flex gap-4 flex-wrap; }
+  .recur-stat  { @apply flex flex-col gap-0.5; }
+  .recur-stat-label { font-family: theme('fontFamily.mono'); @apply text-[.62rem] uppercase tracking-wider; color: var(--color-ink-faint); }
+  .recur-stat-val   { font-family: theme('fontFamily.mono'); @apply text-[.8rem] font-semibold; color: var(--color-ink); }
+  .recur-badge { font-family: theme('fontFamily.mono'); @apply text-[.64rem] font-bold rounded-full px-2.5 py-1 border whitespace-nowrap; }
+  .recur-badge-high { border-color: rgba(167,139,250,.4); color: theme('colors.purple.DEFAULT'); background: rgba(167,139,250,.1); }
+  .recur-badge-med  { border-color: rgba(251,191,36,.35); color: #fbbf24; background: rgba(251,191,36,.08); }
 }

@@ -30,6 +30,7 @@ export function renderGastos() {
   renderCatAccordion(g, bycat, tG, months);
   renderSubsList(g);
   renderTopGastosList(g);
+  renderRecurrentes(g);
 }
 
 function renderMomStrip(g, months) {
@@ -173,4 +174,52 @@ function renderTopGastosList(g) {
   document.getElementById('gasTopList').innerHTML = top.length
     ? top.map((r) => `<div class="receipt-row"><div class="receipt-date">${r.fecha?.slice(5)}</div><div class="receipt-name">${String(r.comentario || r.cat)}</div><div class="receipt-meta">${r.cat}</div><div class="receipt-amt">${fmtFull(r.monto)}</div></div>`).join('')
     : '<div class="empty-state">Sin datos.</div>';
+}
+
+function renderRecurrentes(g) {
+  const el = document.getElementById('gasRecurrentesList');
+  if (!el) return;
+
+  const map = {};
+  g.forEach((r) => {
+    const key = String(r.comentario || '').trim().toLowerCase();
+    if (!key || key.length < 2) return;
+    const ym = r.fecha?.slice(0, 7);
+    if (!ym) return;
+    if (!map[key]) map[key] = { label: r.comentario, cat: r.cat, months: new Set(), total: 0, count: 0, amounts: [] };
+    map[key].months.add(ym);
+    map[key].total += r.monto;
+    map[key].count++;
+    map[key].amounts.push(r.monto);
+  });
+
+  const recurrentes = Object.values(map)
+    .filter((v) => v.months.size >= 2)
+    .sort((a, b) => b.total - a.total);
+
+  if (!recurrentes.length) {
+    el.innerHTML = '<div class="empty-state">No se detectaron gastos recurrentes (mismo comentario en 2+ meses).</div>';
+    return;
+  }
+
+  el.innerHTML = recurrentes.map((v) => {
+    const avg = v.total / v.count;
+    const minA = Math.min(...v.amounts);
+    const maxA = Math.max(...v.amounts);
+    const variacion = maxA - minA;
+    const badge = v.months.size >= 4 ? 'recur-badge-high' : 'recur-badge-med';
+    return `
+      <div class="recur-row">
+        <div class="recur-main">
+          <div class="recur-name">${v.label}</div>
+          <div class="recur-cat">${v.cat}</div>
+        </div>
+        <div class="recur-stats">
+          <div class="recur-stat"><span class="recur-stat-label">Promedio</span><span class="recur-stat-val">${fmtFull(avg)}</span></div>
+          <div class="recur-stat"><span class="recur-stat-label">Total</span><span class="recur-stat-val">${fmtFull(v.total)}</span></div>
+          ${variacion > 0 ? `<div class="recur-stat"><span class="recur-stat-label">Variación</span><span class="recur-stat-val">${fmtFull(variacion)}</span></div>` : ''}
+        </div>
+        <div class="recur-badge ${badge}">${v.months.size} meses</div>
+      </div>`;
+  }).join('');
 }

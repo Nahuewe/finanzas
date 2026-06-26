@@ -1,4 +1,4 @@
-import { setRaw, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS, setExcludedGasCats, setExcludedIngCats } from './state.js';
+import { setRaw, setExcludedGasCats, setExcludedIngCats } from './state.js';
 import { buildFilterOptions } from './filters.js';
 import { applyFilters } from './filters.js';
 
@@ -8,6 +8,7 @@ export function showLoading(v) {
 
 export function formatDate(v) {
   if (!v) return '';
+  if (v instanceof Date) return v.toISOString().split('T')[0];
   if (typeof v === 'number') {
     const d = new Date((v - 25569) * 86400000);
     return d.toISOString().split('T')[0];
@@ -21,7 +22,7 @@ export function processFile(file) {
   reader.onload = (e) => {
     try {
       const XLSX = window.XLSX;
-      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
       const parsed = {};
       wb.SheetNames.forEach((name) => {
         const ws = wb.Sheets[name];
