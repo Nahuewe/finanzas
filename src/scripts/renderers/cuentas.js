@@ -31,7 +31,13 @@ function calcFlujoPosterior(cuenta, fechaCorte) {
   const ingresos = RAW.ingresos
     .filter((r) => r.cuenta === cuenta && r.fecha > fechaCorte)
     .reduce((a, r) => a + r.monto, 0);
-  return ingresos - gastos;
+  const transfSalida = RAW.transferencias
+    .filter((r) => r.cuentaOrigen === cuenta && r.fecha > fechaCorte)
+    .reduce((a, r) => a + r.monto, 0);
+  const transfEntrada = RAW.transferencias
+    .filter((r) => r.cuentaDestino === cuenta && r.fecha > fechaCorte)
+    .reduce((a, r) => a + r.monto, 0);
+  return ingresos - gastos - transfSalida + transfEntrada;
 }
 
 function buildCuentasUI() {
@@ -44,16 +50,24 @@ function buildCuentasUI() {
     ...new Set([
       ...RAW.gastos.map((r) => r.cuenta),
       ...RAW.ingresos.map((r) => r.cuenta),
+      ...RAW.transferencias.map((r) => r.cuentaOrigen),
+      ...RAW.transferencias.map((r) => r.cuentaDestino),
     ].filter(Boolean))
   ].sort();
 
   const gastosPorCuenta = {};
   const ingresosPorCuenta = {};
+  const transfSalientePorCuenta = {};
+  const transfEntrantePorCuenta = {};
   RAW.gastos.forEach((r) => {
     gastosPorCuenta[r.cuenta] = (gastosPorCuenta[r.cuenta] || 0) + r.monto;
   });
   RAW.ingresos.forEach((r) => {
     ingresosPorCuenta[r.cuenta] = (ingresosPorCuenta[r.cuenta] || 0) + r.monto;
+  });
+  RAW.transferencias.forEach((r) => {
+    transfSalientePorCuenta[r.cuentaOrigen] = (transfSalientePorCuenta[r.cuentaOrigen] || 0) + r.monto;
+    transfEntrantePorCuenta[r.cuentaDestino] = (transfEntrantePorCuenta[r.cuentaDestino] || 0) + r.monto;
   });
 
   if (!allAccounts.length) {
@@ -68,6 +82,9 @@ function buildCuentasUI() {
     const gastosTotales = gastosPorCuenta[cuenta] || 0;
     const ingresosTotales = ingresosPorCuenta[cuenta] || 0;
     const netoTotal = ingresosTotales - gastosTotales;
+
+    const transfSaliente = transfSalientePorCuenta[cuenta] || 0;
+    const transfEntrante = transfEntrantePorCuenta[cuenta] || 0;
 
     const flujoPosterior = calcFlujoPosterior(cuenta, fechaCorte);
     const saldoEstimado = saldoNum !== null && flujoPosterior !== null
@@ -112,6 +129,8 @@ function buildCuentasUI() {
         <div class="cuenta-detail">
           <span class="cuenta-detail-chip neg">Gastos ${fmtFull(gastosTotales)}</span>
           <span class="cuenta-detail-chip pos">Ingresos ${fmtFull(ingresosTotales)}</span>
+          ${transfEntrante ? `<span class="cuenta-detail-chip transfer">↘ Recibido ${fmtFull(transfEntrante)}</span>` : ''}
+          ${transfSaliente ? `<span class="cuenta-detail-chip transfer">↗ Transferido ${fmtFull(transfSaliente)}</span>` : ''}
           ${fechaCorte ? `<span class="cuenta-corte-chip">Corte: ${fechaCorte}</span>` : ''}
         </div>
       </div>`;

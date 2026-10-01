@@ -288,7 +288,7 @@ function renderAcumuladoMes(g) {
         responsive: true,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { display: true, labels: { color: '#b6abd6', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 } },
+          legend: { display: true, labels: { color: '#b9b0d9', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 } },
           tooltip: {
             callbacks: {
               title: (items) => `Día ${items[0].label}`,
@@ -302,8 +302,8 @@ function renderAcumuladoMes(g) {
           },
         },
         scales: {
-          x: { ticks: { color: '#8d7fb5', font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#251d40' } },
-          y: { ticks: { color: '#8d7fb5', callback: (v) => fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#251d40' } },
+          x: { ticks: { color: '#8b81b0', font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#221c3b' } },
+          y: { ticks: { color: '#8b81b0', callback: (v) => fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#221c3b' } },
         },
       },
     });

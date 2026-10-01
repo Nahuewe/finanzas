@@ -1,9 +1,9 @@
 export const C = {
-  ink: '#f1edfb',
-  inkDim: '#b6abd6',
-  inkFaint: '#8d7fb5',
-  grid: '#251d40',
-  bg: '#0f0a1a',
+  ink: '#efeaff',
+  inkDim: '#b9b0d9',
+  inkFaint: '#8b81b0',
+  grid: '#221c3b',
+  bg: '#0e0b17',
   purple: '#a78bfa',
   purpleSoftBg: 'rgba(167,139,250,.12)',
   green: '#4ade80',
@@ -13,8 +13,8 @@ export const C = {
 };
 
 export const COLORS = [
-  '#a78bfa','#c084fc','#8b5cf6','#fb7185','#818cf8',
-  '#fbbf24','#ddd6fe','#f472b6','#60a5fa','#4ade80','#fb923c','#e879f9'
+  '#a78bfa','#f472b6','#2dd4bf','#818cf8','#e879f9','#60a5fa',
+  '#c4b5fd','#fb7185','#7c5cf0','#34d399','#fbbf24','#d946ef'
 ];
 
 export const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];

@@ -5,27 +5,27 @@ export default {
     extend: {
       colors: {
         bg: {
-          DEFAULT: '#0f0a1a',
-          raised: '#1a1330',
-          raised2: '#221a3d',
-          sunken: '#0a0614',
+          DEFAULT: '#0e0b17',
+          raised: '#17132a',
+          raised2: '#1f1a38',
+          sunken: '#090711',
         },
         line: {
-          DEFAULT: '#332857',
-          soft: '#251d40',
+          DEFAULT: '#2f2750',
+          soft: '#221c3b',
         },
         ink: {
-          DEFAULT: '#f1edfb',
-          dim: '#b6abd6',
-          faint: '#8d7fb5',
+          DEFAULT: '#efeaff',
+          dim: '#b9b0d9',
+          faint: '#8b81b0',
         },
         purple: {
           DEFAULT: '#a78bfa',
-          deep: '#8b5cf6',
+          deep: '#7c5cf0',
           soft: 'rgba(167,139,250,0.16)',
         },
-        violet: '#c084fc',
-        lavender: '#ddd6fe',
+        violet: '#c4a1ff',
+        lavender: '#e3dcff',
         emerald: {
           fin: '#4ade80',
           deep: '#22c55e',

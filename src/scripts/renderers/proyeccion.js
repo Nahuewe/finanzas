@@ -108,7 +108,7 @@ export function renderProyeccion() {
       plugins: { legend: { display: false }, tooltip: tooltipARS },
       scales: {
         x: axX,
-        y: { ticks: { color: '#8d7fb5', callback: (v) => (v >= 0 ? '+' : '') + fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#251d40' } },
+        y: { ticks: { color: '#8b81b0', callback: (v) => (v >= 0 ? '+' : '') + fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#221c3b' } },
       },
     },
   });

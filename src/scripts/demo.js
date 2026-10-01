@@ -1,245 +1,107 @@
-export const DEMO_DATA = {
-  gastos: [
-    // 2023-11
-    {fecha:'2023-11-03',cat:'Snacks',cuenta:'Billetera A',monto:4200,comentario:'Almacén esquina'},
-    {fecha:'2023-11-10',cat:'Alimentación',cuenta:'Tarjeta B',monto:8500,comentario:'Resto del barrio'},
-    {fecha:'2023-11-15',cat:'Transporte',cuenta:'Billetera A',monto:3200,comentario:'Recarga tarjeta bus'},
-    {fecha:'2023-11-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:38000,comentario:'Plataforma video 1'},
-    {fecha:'2023-11-25',cat:'Snacks',cuenta:'Billetera A',monto:3800,comentario:'Almacén esquina'},
-    // 2023-12
-    {fecha:'2023-12-05',cat:'Salud',cuenta:'Tarjeta B',monto:45000,comentario:'Consulta médica'},
-    {fecha:'2023-12-10',cat:'Regalos',cuenta:'Tarjeta B',monto:35000,comentario:'Regalo fin de año'},
-    {fecha:'2023-12-15',cat:'Suscripciones',cuenta:'Tarjeta B',monto:12000,comentario:'Plataforma música'},
-    {fecha:'2023-12-20',cat:'Alimentación',cuenta:'Billetera A',monto:22000,comentario:'Cena japonesa'},
-    {fecha:'2023-12-28',cat:'Transporte',cuenta:'Billetera A',monto:3200,comentario:'Recarga tarjeta bus'},
-    // 2024-01
-    {fecha:'2024-01-08',cat:'Snacks',cuenta:'Billetera A',monto:5100,comentario:'Almacén esquina'},
-    {fecha:'2024-01-12',cat:'Ocio',cuenta:'Tarjeta B',monto:80000,comentario:'Entradas show en vivo'},
-    {fecha:'2024-01-18',cat:'Alimentación',cuenta:'Billetera A',monto:15000,comentario:'Pedido a domicilio'},
-    {fecha:'2024-01-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:12500,comentario:'Plataforma música'},
-    {fecha:'2024-01-25',cat:'Suscripciones',cuenta:'Tarjeta B',monto:38000,comentario:'Plataforma video 1'},
-    {fecha:'2024-01-28',cat:'Transporte',cuenta:'Billetera A',monto:3200,comentario:'Recarga tarjeta bus'},
-    // 2024-02
-    {fecha:'2024-02-05',cat:'Casa',cuenta:'Tarjeta B',monto:55000,comentario:'Impuesto mensual'},
-    {fecha:'2024-02-14',cat:'Regalos',cuenta:'Billetera A',monto:42000,comentario:'Presente especial'},
-    {fecha:'2024-02-20',cat:'Snacks',cuenta:'Billetera A',monto:4600,comentario:'Almacén esquina'},
-    {fecha:'2024-02-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:13000,comentario:'Plataforma música'},
-    {fecha:'2024-02-25',cat:'Alimentación',cuenta:'Billetera A',monto:18000,comentario:'Resto del barrio'},
-    {fecha:'2024-02-27',cat:'Transporte',cuenta:'Billetera A',monto:3200,comentario:'Recarga tarjeta bus'},
-    // 2024-03
-    {fecha:'2024-03-10',cat:'Salud',cuenta:'Tarjeta B',monto:65000,comentario:'Odontólogo'},
-    {fecha:'2024-03-15',cat:'Alimentación',cuenta:'Billetera A',monto:18000,comentario:'Resto del barrio'},
-    {fecha:'2024-03-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:38000,comentario:'Plataforma video 1'},
-    {fecha:'2024-03-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:13500,comentario:'Plataforma música'},
-    {fecha:'2024-03-28',cat:'Transporte',cuenta:'Billetera A',monto:3200,comentario:'Recarga tarjeta bus'},
-    // 2024-04
-    {fecha:'2024-04-08',cat:'Entretenimiento digital',cuenta:'Tarjeta B',monto:25000,comentario:'Tienda de juegos PC'},
-    {fecha:'2024-04-15',cat:'Snacks',cuenta:'Billetera A',monto:5300,comentario:'Almacén esquina'},
-    {fecha:'2024-04-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:38000,comentario:'Plataforma video 1'},
-    {fecha:'2024-04-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:14000,comentario:'Plataforma música'},
-    {fecha:'2024-04-27',cat:'Transporte',cuenta:'Billetera A',monto:4500,comentario:'Recarga tarjeta bus'},
-    // 2024-05
-    {fecha:'2024-05-12',cat:'Ocio',cuenta:'Tarjeta B',monto:120000,comentario:'Compra tienda online'},
-    {fecha:'2024-05-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:38000,comentario:'Plataforma video 1'},
-    {fecha:'2024-05-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:14500,comentario:'Plataforma música'},
-    {fecha:'2024-05-27',cat:'Transporte',cuenta:'Billetera A',monto:4500,comentario:'Recarga tarjeta bus'},
-    // 2024-06
-    {fecha:'2024-06-15',cat:'Casa',cuenta:'Tarjeta B',monto:85000,comentario:'Plomería urgente'},
-    {fecha:'2024-06-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:38000,comentario:'Plataforma video 1'},
-    {fecha:'2024-06-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:15000,comentario:'Plataforma música'},
-    {fecha:'2024-06-27',cat:'Transporte',cuenta:'Billetera A',monto:4500,comentario:'Recarga tarjeta bus'},
-    // 2024-07
-    {fecha:'2024-07-10',cat:'Alimentación',cuenta:'Billetera A',monto:32000,comentario:'Cena japonesa'},
-    {fecha:'2024-07-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 1'},
-    {fecha:'2024-07-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:16000,comentario:'Plataforma música'},
-    {fecha:'2024-07-25',cat:'Snacks',cuenta:'Billetera A',monto:5800,comentario:'Almacén esquina'},
-    {fecha:'2024-07-27',cat:'Transporte',cuenta:'Billetera A',monto:4500,comentario:'Recarga tarjeta bus'},
-    // 2024-08
-    {fecha:'2024-08-20',cat:'Tecnología',cuenta:'Tarjeta B',monto:200000,comentario:'Reloj inteligente'},
-    {fecha:'2024-08-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:16500,comentario:'Plataforma música'},
-    {fecha:'2024-08-25',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 1'},
-    {fecha:'2024-08-27',cat:'Transporte',cuenta:'Billetera A',monto:4500,comentario:'Recarga tarjeta bus'},
-    // 2024-09
-    {fecha:'2024-09-05',cat:'Regalos',cuenta:'Tarjeta B',monto:500000,comentario:'Evento familiar'},
-    {fecha:'2024-09-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 1'},
-    {fecha:'2024-09-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:17000,comentario:'Plataforma música'},
-    {fecha:'2024-09-27',cat:'Transporte',cuenta:'Billetera A',monto:5000,comentario:'Recarga tarjeta bus'},
-    // 2024-10
-    {fecha:'2024-10-12',cat:'Snacks',cuenta:'Billetera A',monto:6200,comentario:'Almacén esquina'},
-    {fecha:'2024-10-18',cat:'Alimentación',cuenta:'Billetera A',monto:28000,comentario:'Resto del barrio'},
-    {fecha:'2024-10-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 1'},
-    {fecha:'2024-10-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:17500,comentario:'Plataforma música'},
-    {fecha:'2024-10-27',cat:'Transporte',cuenta:'Billetera A',monto:5000,comentario:'Recarga tarjeta bus'},
-    // 2024-11
-    {fecha:'2024-11-18',cat:'Suscripciones',cuenta:'Tarjeta B',monto:85000,comentario:'Membresía gaming anual'},
-    {fecha:'2024-11-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 1'},
-    {fecha:'2024-11-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:18000,comentario:'Plataforma música'},
-    {fecha:'2024-11-25',cat:'Snacks',cuenta:'Billetera A',monto:6500,comentario:'Almacén esquina'},
-    {fecha:'2024-11-27',cat:'Transporte',cuenta:'Billetera A',monto:5000,comentario:'Recarga tarjeta bus'},
-    // 2024-12
-    {fecha:'2024-12-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 1'},
-    {fecha:'2024-12-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:18500,comentario:'Plataforma música'},
-    {fecha:'2024-12-24',cat:'Regalos',cuenta:'Billetera A',monto:80000,comentario:'Festejos fin de año'},
-    {fecha:'2024-12-27',cat:'Transporte',cuenta:'Billetera A',monto:5000,comentario:'Recarga tarjeta bus'},
-    // 2025-01
-    {fecha:'2025-01-10',cat:'Snacks',cuenta:'Billetera A',monto:6800,comentario:'Almacén esquina'},
-    {fecha:'2025-01-15',cat:'Entretenimiento digital',cuenta:'Tarjeta B',monto:45000,comentario:'Pase de batalla'},
-    {fecha:'2025-01-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:55000,comentario:'Plataforma video 1'},
-    {fecha:'2025-01-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:19000,comentario:'Plataforma música'},
-    {fecha:'2025-01-27',cat:'Transporte',cuenta:'Billetera A',monto:5500,comentario:'Recarga tarjeta bus'},
-    // 2025-02
-    {fecha:'2025-02-10',cat:'Viajes',cuenta:'Tarjeta B',monto:1200000,comentario:'Pasaje aéreo ida y vuelta'},
-    {fecha:'2025-02-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:55000,comentario:'Plataforma video 1'},
-    {fecha:'2025-02-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:19500,comentario:'Plataforma música'},
-    {fecha:'2025-02-27',cat:'Transporte',cuenta:'Billetera A',monto:5500,comentario:'Recarga tarjeta bus'},
-    // 2025-03
-    {fecha:'2025-03-15',cat:'Alimentación',cuenta:'Billetera A',monto:35000,comentario:'Resto del barrio'},
-    {fecha:'2025-03-20',cat:'Snacks',cuenta:'Billetera A',monto:7500,comentario:'Almacén esquina'},
-    {fecha:'2025-03-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:55000,comentario:'Plataforma video 1'},
-    {fecha:'2025-03-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:20000,comentario:'Plataforma música'},
-    {fecha:'2025-03-25',cat:'Casa',cuenta:'Tarjeta B',monto:75000,comentario:'Impuesto mensual'},
-    {fecha:'2025-03-27',cat:'Transporte',cuenta:'Billetera A',monto:5500,comentario:'Recarga tarjeta bus'},
-    // 2025-04
-    {fecha:'2025-04-08',cat:'Alimentación',cuenta:'Billetera A',monto:38000,comentario:'Resto del barrio'},
-    {fecha:'2025-04-12',cat:'Alimentación',cuenta:'Billetera A',monto:42000,comentario:'Cena japonesa'},
-    {fecha:'2025-04-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:55000,comentario:'Plataforma video 1'},
-    {fecha:'2025-04-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:20500,comentario:'Plataforma música'},
-    {fecha:'2025-04-25',cat:'Casa',cuenta:'Tarjeta B',monto:75000,comentario:'Impuesto mensual'},
-    {fecha:'2025-04-27',cat:'Transporte',cuenta:'Billetera A',monto:6000,comentario:'Recarga tarjeta bus'},
-    // 2025-05
-    {fecha:'2025-05-15',cat:'Suscripciones',cuenta:'Tarjeta B',monto:45000,comentario:'Plataforma video 2'},
-    {fecha:'2025-05-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:55000,comentario:'Plataforma video 1'},
-    {fecha:'2025-05-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:21000,comentario:'Plataforma música'},
-    {fecha:'2025-05-25',cat:'Casa',cuenta:'Tarjeta B',monto:75000,comentario:'Impuesto mensual'},
-    {fecha:'2025-05-27',cat:'Transporte',cuenta:'Billetera A',monto:6000,comentario:'Recarga tarjeta bus'},
-    // 2025-06
-    {fecha:'2025-06-10',cat:'Ocio',cuenta:'Tarjeta B',monto:370000,comentario:'Coleccionables tienda online'},
-    {fecha:'2025-06-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:60000,comentario:'Plataforma video 1'},
-    {fecha:'2025-06-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:21500,comentario:'Plataforma música'},
-    {fecha:'2025-06-25',cat:'Casa',cuenta:'Tarjeta B',monto:75000,comentario:'Impuesto mensual'},
-    {fecha:'2025-06-27',cat:'Transporte',cuenta:'Billetera A',monto:6000,comentario:'Recarga tarjeta bus'},
-    // 2025-07
-    {fecha:'2025-07-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:60000,comentario:'Plataforma video 1'},
-    {fecha:'2025-07-22',cat:'Casa',cuenta:'Tarjeta B',monto:95000,comentario:'Reparación hogar'},
-    {fecha:'2025-07-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:22000,comentario:'Plataforma música'},
-    {fecha:'2025-07-25',cat:'Casa',cuenta:'Tarjeta B',monto:80000,comentario:'Impuesto mensual'},
-    {fecha:'2025-07-27',cat:'Transporte',cuenta:'Billetera A',monto:6500,comentario:'Recarga tarjeta bus'},
-    // 2025-08
-    {fecha:'2025-08-14',cat:'Salud',cuenta:'Tarjeta B',monto:120000,comentario:'Control visual'},
-    {fecha:'2025-08-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:60000,comentario:'Plataforma video 1'},
-    {fecha:'2025-08-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:22500,comentario:'Plataforma música'},
-    {fecha:'2025-08-25',cat:'Casa',cuenta:'Tarjeta B',monto:80000,comentario:'Impuesto mensual'},
-    {fecha:'2025-08-27',cat:'Transporte',cuenta:'Billetera A',monto:6500,comentario:'Recarga tarjeta bus'},
-    // 2025-09
-    {fecha:'2025-09-05',cat:'Snacks',cuenta:'Billetera A',monto:8100,comentario:'Almacén esquina'},
-    {fecha:'2025-09-10',cat:'Alimentación',cuenta:'Billetera A',monto:48000,comentario:'Pedido a domicilio'},
-    {fecha:'2025-09-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:60000,comentario:'Plataforma video 1'},
-    {fecha:'2025-09-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:23000,comentario:'Plataforma música'},
-    {fecha:'2025-09-25',cat:'Casa',cuenta:'Tarjeta B',monto:80000,comentario:'Impuesto mensual'},
-    {fecha:'2025-09-27',cat:'Transporte',cuenta:'Billetera A',monto:6500,comentario:'Recarga tarjeta bus'},
-    // 2025-10
-    {fecha:'2025-10-18',cat:'Regalos',cuenta:'Billetera A',monto:500000,comentario:'Fecha especial familiar'},
-    {fecha:'2025-10-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:65000,comentario:'Plataforma video 1'},
-    {fecha:'2025-10-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:23500,comentario:'Plataforma música'},
-    {fecha:'2025-10-25',cat:'Casa',cuenta:'Tarjeta B',monto:85000,comentario:'Impuesto mensual'},
-    {fecha:'2025-10-27',cat:'Transporte',cuenta:'Billetera A',monto:7000,comentario:'Recarga tarjeta bus'},
-    // 2025-11
-    {fecha:'2025-11-12',cat:'Entretenimiento digital',cuenta:'Tarjeta B',monto:35000,comentario:'Juego online nuevo'},
-    {fecha:'2025-11-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:65000,comentario:'Plataforma video 1'},
-    {fecha:'2025-11-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:24000,comentario:'Plataforma música'},
-    {fecha:'2025-11-25',cat:'Casa',cuenta:'Tarjeta B',monto:85000,comentario:'Impuesto mensual'},
-    {fecha:'2025-11-27',cat:'Transporte',cuenta:'Billetera A',monto:7000,comentario:'Recarga tarjeta bus'},
-    // 2025-12
-    {fecha:'2025-12-03',cat:'Viajes',cuenta:'Tarjeta B',monto:1162791,comentario:'Pasaje destino internacional'},
-    {fecha:'2025-12-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:65000,comentario:'Plataforma video 1'},
-    {fecha:'2025-12-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:24500,comentario:'Plataforma música'},
-    {fecha:'2025-12-22',cat:'Viajes',cuenta:'Tarjeta B',monto:350000,comentario:'Equipaje adicional'},
-    {fecha:'2025-12-25',cat:'Casa',cuenta:'Tarjeta B',monto:85000,comentario:'Impuesto mensual'},
-    {fecha:'2025-12-27',cat:'Transporte',cuenta:'Billetera A',monto:7000,comentario:'Recarga tarjeta bus'},
-    // 2026-01
-    {fecha:'2026-01-06',cat:'Viajes',cuenta:'Tarjeta B',monto:1997063,comentario:'Gastos estadía exterior'},
-    {fecha:'2026-01-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:70000,comentario:'Plataforma video 1'},
-    {fecha:'2026-01-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:25000,comentario:'Plataforma música'},
-    {fecha:'2026-01-25',cat:'Casa',cuenta:'Tarjeta B',monto:90000,comentario:'Impuesto mensual'},
-    {fecha:'2026-01-27',cat:'Transporte',cuenta:'Billetera A',monto:7500,comentario:'Recarga tarjeta bus'},
-    // 2026-02
-    {fecha:'2026-02-18',cat:'Ahorro dólares',cuenta:'Banco C',monto:287589,comentario:'Compra divisa MEP'},
-    {fecha:'2026-02-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:70000,comentario:'Plataforma video 1'},
-    {fecha:'2026-02-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:25500,comentario:'Plataforma música'},
-    {fecha:'2026-02-25',cat:'Casa',cuenta:'Tarjeta B',monto:90000,comentario:'Impuesto mensual'},
-    {fecha:'2026-02-27',cat:'Transporte',cuenta:'Billetera A',monto:7500,comentario:'Recarga tarjeta bus'},
-    // 2026-03
-    {fecha:'2026-03-10',cat:'Alimentación',cuenta:'Billetera A',monto:45000,comentario:'Cena japonesa'},
-    {fecha:'2026-03-15',cat:'Alimentación',cuenta:'Billetera A',monto:52000,comentario:'Resto del barrio'},
-    {fecha:'2026-03-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:70000,comentario:'Plataforma video 1'},
-    {fecha:'2026-03-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:26000,comentario:'Plataforma música'},
-    {fecha:'2026-03-25',cat:'Casa',cuenta:'Tarjeta B',monto:90000,comentario:'Impuesto mensual'},
-    {fecha:'2026-03-27',cat:'Transporte',cuenta:'Billetera A',monto:7500,comentario:'Recarga tarjeta bus'},
-    // 2026-04
-    {fecha:'2026-04-15',cat:'Snacks',cuenta:'Billetera A',monto:9200,comentario:'Almacén esquina'},
-    {fecha:'2026-04-18',cat:'Alimentación',cuenta:'Billetera A',monto:58000,comentario:'Pedido a domicilio'},
-    {fecha:'2026-04-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:75000,comentario:'Plataforma video 1'},
-    {fecha:'2026-04-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:26500,comentario:'Plataforma música'},
-    {fecha:'2026-04-25',cat:'Casa',cuenta:'Tarjeta B',monto:95000,comentario:'Impuesto mensual'},
-    {fecha:'2026-04-27',cat:'Transporte',cuenta:'Billetera A',monto:8000,comentario:'Recarga tarjeta bus'},
-    // 2026-05
-    {fecha:'2026-05-06',cat:'Entretenimiento digital',cuenta:'Tarjeta B',monto:10000,comentario:'DLC descuento'},
-    {fecha:'2026-05-12',cat:'Salud',cuenta:'Tarjeta B',monto:145000,comentario:'Odontólogo'},
-    {fecha:'2026-05-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:75000,comentario:'Plataforma video 1'},
-    {fecha:'2026-05-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:27000,comentario:'Plataforma música'},
-    {fecha:'2026-05-25',cat:'Casa',cuenta:'Tarjeta B',monto:95000,comentario:'Impuesto mensual'},
-    {fecha:'2026-05-27',cat:'Transporte',cuenta:'Billetera A',monto:8000,comentario:'Recarga tarjeta bus'},
-    // 2026-06
-    {fecha:'2026-06-10',cat:'Snacks',cuenta:'Billetera A',monto:9800,comentario:'Almacén esquina'},
-    {fecha:'2026-06-15',cat:'Alimentación',cuenta:'Billetera A',monto:62000,comentario:'Cena japonesa'},
-    {fecha:'2026-06-20',cat:'Suscripciones',cuenta:'Tarjeta B',monto:75000,comentario:'Plataforma video 1'},
-    {fecha:'2026-06-22',cat:'Suscripciones',cuenta:'Tarjeta B',monto:27500,comentario:'Plataforma música'},
-    {fecha:'2026-06-25',cat:'Casa',cuenta:'Tarjeta B',monto:95000,comentario:'Impuesto mensual'},
-    {fecha:'2026-06-27',cat:'Transporte',cuenta:'Billetera A',monto:8000,comentario:'Recarga tarjeta bus'},
-  ],
-  ingresos: [
-    {fecha:'2023-11-30',cat:'Salario',cuenta:'Banco C',monto:46000,comentario:'Sueldo noviembre'},
-    {fecha:'2023-12-31',cat:'Salario',cuenta:'Banco C',monto:284500,comentario:'Sueldo diciembre'},
-    {fecha:'2024-01-31',cat:'Salario',cuenta:'Banco C',monto:350000,comentario:'Sueldo enero'},
-    {fecha:'2024-02-29',cat:'Salario',cuenta:'Banco C',monto:380000,comentario:'Sueldo febrero'},
-    {fecha:'2024-03-31',cat:'Salario',cuenta:'Banco C',monto:400000,comentario:'Sueldo marzo'},
-    {fecha:'2024-04-30',cat:'Salario',cuenta:'Banco C',monto:420000,comentario:'Sueldo abril'},
-    {fecha:'2024-05-14',cat:'Freelance',cuenta:'Billetera A',monto:350000,comentario:'Proyecto cliente A 1/2'},
-    {fecha:'2024-05-31',cat:'Salario',cuenta:'Banco C',monto:440000,comentario:'Sueldo mayo'},
-    {fecha:'2024-06-28',cat:'Freelance',cuenta:'Billetera A',monto:250000,comentario:'Proyecto cliente A 2/2'},
-    {fecha:'2024-06-30',cat:'Salario',cuenta:'Banco C',monto:460000,comentario:'Sueldo junio'},
-    {fecha:'2024-07-31',cat:'Salario',cuenta:'Banco C',monto:600000,comentario:'Sueldo julio'},
-    {fecha:'2024-08-15',cat:'Freelance',cuenta:'Billetera A',monto:400000,comentario:'Mantenimiento cliente A'},
-    {fecha:'2024-08-20',cat:'Ventas',cuenta:'Banco C',monto:12500000,comentario:'Venta bien propio'},
-    {fecha:'2024-08-31',cat:'Salario',cuenta:'Banco C',monto:620000,comentario:'Sueldo agosto'},
-    {fecha:'2024-09-30',cat:'Salario',cuenta:'Banco C',monto:700000,comentario:'Sueldo septiembre'},
-    {fecha:'2024-10-31',cat:'Salario',cuenta:'Banco C',monto:750000,comentario:'Sueldo octubre'},
-    {fecha:'2024-11-30',cat:'Salario',cuenta:'Banco C',monto:800000,comentario:'Sueldo noviembre'},
-    {fecha:'2024-12-31',cat:'Salario',cuenta:'Banco C',monto:1032053,comentario:'Sueldo diciembre'},
-    {fecha:'2025-01-13',cat:'Freelance',cuenta:'Billetera A',monto:700000,comentario:'Proyecto cliente B 1/2'},
-    {fecha:'2025-01-31',cat:'Salario',cuenta:'Banco C',monto:962053,comentario:'Sueldo enero'},
-    {fecha:'2025-02-10',cat:'Freelance',cuenta:'Billetera A',monto:700000,comentario:'Proyecto cliente B 2/2'},
-    {fecha:'2025-02-28',cat:'Salario',cuenta:'Banco C',monto:934053,comentario:'Sueldo febrero'},
-    {fecha:'2025-03-31',cat:'Salario',cuenta:'Banco C',monto:980000,comentario:'Sueldo marzo'},
-    {fecha:'2025-04-30',cat:'Salario',cuenta:'Banco C',monto:3194462,comentario:'Sueldo abril (ajuste paritario)'},
-    {fecha:'2025-05-31',cat:'Salario',cuenta:'Banco C',monto:1500000,comentario:'Sueldo mayo'},
-    {fecha:'2025-06-30',cat:'Salario',cuenta:'Banco C',monto:1677231,comentario:'Sueldo junio'},
-    {fecha:'2025-07-30',cat:'Freelance',cuenta:'Billetera A',monto:1000000,comentario:'Proyecto cliente C 1/2'},
-    {fecha:'2025-07-31',cat:'Salario',cuenta:'Banco C',monto:1597231,comentario:'Sueldo julio'},
-    {fecha:'2025-08-31',cat:'Salario',cuenta:'Banco C',monto:1650000,comentario:'Sueldo agosto'},
-    {fecha:'2025-09-10',cat:'Freelance',cuenta:'Billetera A',monto:1000000,comentario:'Proyecto cliente C 2/2'},
-    {fecha:'2025-09-30',cat:'Salario',cuenta:'Banco C',monto:1700000,comentario:'Sueldo septiembre'},
-    {fecha:'2025-10-31',cat:'Salario',cuenta:'Banco C',monto:1224544,comentario:'Sueldo octubre'},
-    {fecha:'2025-11-04',cat:'Freelance',cuenta:'Billetera A',monto:250000,comentario:'Proyecto cliente D 1/2'},
-    {fecha:'2025-11-30',cat:'Salario',cuenta:'Banco C',monto:1280000,comentario:'Sueldo noviembre'},
-    {fecha:'2025-12-01',cat:'Freelance',cuenta:'Billetera A',monto:250000,comentario:'Proyecto cliente D 2/2'},
-    {fecha:'2025-12-31',cat:'Salario',cuenta:'Banco C',monto:1304544,comentario:'Sueldo diciembre'},
-    {fecha:'2026-01-31',cat:'Salario',cuenta:'Banco C',monto:1224544,comentario:'Sueldo enero'},
-    {fecha:'2026-02-28',cat:'Salario',cuenta:'Banco C',monto:1224549,comentario:'Sueldo febrero'},
-    {fecha:'2026-03-31',cat:'Salario',cuenta:'Banco C',monto:1274677,comentario:'Sueldo marzo'},
-    {fecha:'2026-04-30',cat:'Salario',cuenta:'Banco C',monto:2632770,comentario:'Sueldo abril (ajuste paritario)'},
-    {fecha:'2026-05-31',cat:'Salario',cuenta:'Banco C',monto:1350000,comentario:'Sueldo mayo'},
-    {fecha:'2026-06-15',cat:'Freelance',cuenta:'Billetera A',monto:800000,comentario:'Proyecto cliente E'},
-  ],
-  transferencias: []
+function rng(seed) {
+  let a = seed;
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const START = new Date(2023, 10, 1);
+const END = new Date(2026, 8, 30);
+const INFLATION = 1.028;
+
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const round = (n) => Math.max(100, Math.round(n / 100) * 100);
+
+const COMMENTS = {
+  Snacks: ['Almacén esquina', 'Kiosco de la facultad', 'Golosinas', 'Máquina expendedora'],
+  Café: ['Café de la oficina', 'Cafetería centro', 'Medialunas y café'],
+  Alimentación: ['Resto del barrio', 'Pedido a domicilio', 'Cena japonesa', 'Supermercado', 'Verdulería', 'Almuerzo menú ejecutivo'],
+  Transporte: ['Recarga tarjeta bus', 'Viaje en app', 'Combustible'],
+  Salud: ['Consulta médica', 'Farmacia', 'Odontólogo', 'Análisis clínicos'],
+  Ocio: ['Entradas cine', 'Salida con amigos', 'Entradas show en vivo', 'Compra tienda online'],
+  'Entretenimiento digital': ['Tienda de juegos PC', 'Pase de batalla', 'Juego online nuevo', 'DLC descuento'],
+  Regalos: ['Cumpleaños amigo', 'Regalo familiar', 'Presente especial'],
+  Tecnología: ['Accesorio PC', 'Auriculares', 'Cable y cargador'],
+  Casa: ['Ferretería', 'Reparación hogar', 'Artículos de limpieza']
 };
+
+const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
+
+function build() {
+  const r = rng(20260930);
+  const gastos = [];
+  const ingresos = [];
+  const transferencias = [];
+  const add = (fecha, cat, cuenta, monto, comentario) => gastos.push({ fecha, cat, cuenta, monto: round(monto), comentario });
+
+  let monthIdx = -1;
+  for (let d = new Date(START); d <= END; d.setDate(d.getDate() + 1)) {
+    const day = d.getDate();
+    const dow = d.getDay();
+    const f = iso(d);
+    const weekend = dow === 0 || dow === 6;
+    const fri = dow === 5;
+
+    if (day === 1) monthIdx++;
+    const k = Math.pow(INFLATION, Math.max(monthIdx, 0));
+    const ym = f.slice(0, 7);
+
+    if (r() < (weekend || fri ? 0.7 : 0.45)) add(f, 'Snacks', 'Billetera A', (800 + r() * 2200) * k, pick(r, COMMENTS.Snacks));
+    if (!weekend && r() < 0.5) add(f, 'Café', 'Billetera A', (1800 + r() * 1800) * k, pick(r, COMMENTS['Café']));
+    if (r() < (weekend ? 0.7 : 0.3)) add(f, 'Alimentación', r() < 0.6 ? 'Tarjeta B' : 'Billetera A', (6000 + r() * 12000) * (weekend ? 1.5 : 1) * k, pick(r, COMMENTS['Alimentación']));
+    if (!weekend && r() < 0.55) add(f, 'Transporte', 'Billetera A', (900 + r() * 2200) * k, r() < 0.7 ? 'Recarga tarjeta bus' : pick(r, COMMENTS.Transporte));
+    if (r() < 0.04) add(f, 'Salud', 'Tarjeta B', (12000 + r() * 40000) * k, pick(r, COMMENTS.Salud));
+    if (r() < (weekend ? 0.09 : 0.03)) add(f, 'Ocio', 'Tarjeta B', (10000 + r() * 45000) * k, pick(r, COMMENTS.Ocio));
+    if (r() < 0.05) add(f, 'Entretenimiento digital', 'Tarjeta B', (5000 + r() * 22000) * k, pick(r, COMMENTS['Entretenimiento digital']));
+    if (r() < 0.03) add(f, 'Casa', 'Tarjeta B', (8000 + r() * 30000) * k, pick(r, COMMENTS.Casa));
+    if (r() < 0.012) add(f, 'Tecnología', 'Tarjeta B', (25000 + r() * 120000) * k, pick(r, COMMENTS['Tecnología']));
+    if (r() < 0.02) add(f, 'Regalos', 'Billetera A', (12000 + r() * 40000) * k, pick(r, COMMENTS.Regalos));
+
+    if (day === 3) add(f, 'Casa', 'Banco C', 140000 * k, 'Alquiler');
+    if (day === 5) add(f, 'Salud', 'Tarjeta B', 18000 * k, 'Gimnasio');
+    if (day === 8) add(f, 'Casa', 'Tarjeta B', 14000 * k, 'Internet hogar');
+    if (day === 10 && monthIdx >= 4) add(f, 'Ahorro dólares', 'Banco C', (60000 + r() * 60000) * k, 'Compra divisa MEP');
+    if (day === 20) add(f, 'Suscripciones', 'Tarjeta B', 9000 * k, 'Plataforma video 1');
+    if (day === 22) add(f, 'Suscripciones', 'Tarjeta B', 5200 * k, 'Plataforma música');
+    if (day === 25) add(f, 'Casa', 'Tarjeta B', 22000 * k, 'Impuesto mensual');
+    if (day === 12 && monthIdx >= 18) add(f, 'Suscripciones', 'Tarjeta B', 7500 * k, 'Plataforma video 2');
+    if (ym === '2024-11' && day === 18) add(f, 'Suscripciones', 'Tarjeta B', 85000, 'Membresía gaming anual');
+    if (ym === '2025-02' && day === 10) add(f, 'Viajes', 'Tarjeta B', 520000 * k, 'Pasaje aéreo ida y vuelta');
+    if (ym === '2025-02' && day === 14) add(f, 'Viajes', 'Tarjeta B', 180000 * k, 'Alojamiento fin de semana');
+    if (ym === '2025-12' && day === 3) add(f, 'Viajes', 'Tarjeta B', 780000 * k, 'Pasaje destino internacional');
+    if (ym === '2026-01' && [6, 9, 12, 15, 18].includes(day)) add(f, 'Viajes', 'Tarjeta B', (160000 + r() * 120000) * k, 'Gastos estadía exterior');
+    if (ym === '2024-09' && day === 5) add(f, 'Regalos', 'Tarjeta B', 150000 * k, 'Evento familiar');
+    if (ym === '2025-06' && day === 10) add(f, 'Ocio', 'Tarjeta B', 110000 * k, 'Coleccionables tienda online');
+    if (ym === '2026-05' && day === 12) add(f, 'Salud', 'Tarjeta B', 90000 * k, 'Odontólogo');
+  }
+
+  let m = -1;
+  for (let y = 2023, mo = 10; y < 2026 || mo <= 8; mo++) {
+    if (mo > 11) { mo = 0; y++; }
+    if (y === 2026 && mo > 8) break;
+    m++;
+    const k = Math.pow(INFLATION, m);
+    const last = new Date(y, mo + 1, 0).getDate();
+    const ym = `${y}-${String(mo + 1).padStart(2, '0')}`;
+    const mes = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][mo];
+    const sueldo = 800000 * k * (1 + (m > 17 ? 0.06 : 0));
+    ingresos.push({ fecha: `${ym}-${last}`, cat: 'Salario', cuenta: 'Banco C', monto: round(sueldo), comentario: `Sueldo ${mes}` });
+    if (mo === 5 || mo === 11) ingresos.push({ fecha: `${ym}-${last - 3}`, cat: 'Salario', cuenta: 'Banco C', monto: round(sueldo * 0.5), comentario: `Aguinaldo ${mes}` });
+    if (m % 4 === 2) ingresos.push({ fecha: `${ym}-14`, cat: 'Freelance', cuenta: 'Billetera A', monto: round((180000 + r() * 220000) * k), comentario: `Proyecto cliente ${'ABCDEFGHIJ'[Math.floor(m / 4)]}` });
+    if (m >= 3) ingresos.push({ fecha: `${ym}-28`, cat: 'Intereses', cuenta: 'Banco C', monto: round((3000 + r() * 4000) * k), comentario: 'Rendimiento cuenta remunerada' });
+    if (ym === '2024-08') ingresos.push({ fecha: '2024-08-20', cat: 'Ventas', cuenta: 'Banco C', monto: 2200000, comentario: 'Venta bien propio' });
+
+    const sd = `${ym}-04`;
+    transferencias.push({ fecha: sd, cuentaOrigen: 'Banco C', cuentaDestino: 'Tarjeta B', monto: round(180000 * k), comentario: 'Fondeo tarjeta' });
+    transferencias.push({ fecha: sd, cuentaOrigen: 'Banco C', cuentaDestino: 'Billetera A', monto: round(90000 * k), comentario: 'Gastos diarios' });
+    if (m % 3 === 0) transferencias.push({ fecha: `${ym}-16`, cuentaOrigen: 'Billetera A', cuentaDestino: 'Banco C', monto: round(40000 * k), comentario: 'Devolución sobrante' });
+  }
+
+  const byDate = (a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0);
+  return { gastos: gastos.sort(byDate), ingresos: ingresos.sort(byDate), transferencias: transferencias.sort(byDate) };
+}
+
+export const DEMO_DATA = build();

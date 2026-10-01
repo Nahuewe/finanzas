@@ -47,17 +47,17 @@ export function mkChart(id, config) {
 }
 
 export const axX = {
-  ticks: { color: '#8d7fb5', font: { size: 9, family: 'JetBrains Mono' }, maxRotation: 45 },
-  grid: { color: '#251d40' }
+  ticks: { color: '#8b81b0', font: { size: 9, family: 'JetBrains Mono' }, maxRotation: 45 },
+  grid: { color: '#221c3b' }
 };
 
 export const axY = (cb) => ({
-  ticks: { color: '#8d7fb5', callback: cb || ((v) => fmt(v)), font: { size: 9, family: 'JetBrains Mono' } },
-  grid: { color: '#251d40' }
+  ticks: { color: '#8b81b0', callback: cb || ((v) => fmt(v)), font: { size: 9, family: 'JetBrains Mono' } },
+  grid: { color: '#221c3b' }
 });
 
 export const tooltipARS = { callbacks: { label: (ctx) => fmtFull(ctx.raw) } };
 
 export const legendStyle = {
-  labels: { color: '#b6abd6', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 }
+  labels: { color: '#b9b0d9', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 }
 };

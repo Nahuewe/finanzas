@@ -57,14 +57,15 @@ import Layout from '../layouts/Layout.astro';
     <div class="exclude-panel" id="excludePanel"></div>
 
     <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="resumen">📊 Resumen</button>
-      <button class="tab-btn" data-tab="gastos">💸 Gastos</button>
-      <button class="tab-btn" data-tab="ingresos">💵 Ingresos</button>
-      <button class="tab-btn" data-tab="flujo">📈 Flujo</button>
-      <button class="tab-btn" data-tab="proyeccion">🔮 Proyección</button>
-      <button class="tab-btn" data-tab="ahorros">💡 Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
-      <button class="tab-btn" data-tab="comentarios">💬 Comentarios</button>
-      <button class="tab-btn" data-tab="cuentas">🏦 Cuentas</button>
+      <button class="tab-btn active" data-tab="resumen">Resumen</button>
+      <button class="tab-btn" data-tab="gastos">Gastos</button>
+      <button class="tab-btn" data-tab="ingresos">Ingresos</button>
+      <button class="tab-btn" data-tab="flujo">Flujo</button>
+      <button class="tab-btn" data-tab="proyeccion">Proyección</button>
+      <button class="tab-btn" data-tab="ahorros"> Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
+      <button class="tab-btn" data-tab="habitos">Hábitos</button>
+      <button class="tab-btn" data-tab="comentarios">Comentarios</button>
+      <button class="tab-btn" data-tab="cuentas">Cuentas</button>
     </nav>
 
     <!-- ── RESUMEN ── -->
@@ -73,6 +74,10 @@ import Layout from '../layouts/Layout.astro';
       <div class="card card-mb">
         <h3>Ingresos vs Gastos</h3>
         <canvas id="chartResumen"></canvas>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h3>Balance acumulado</h3><canvas id="chartBalance"></canvas></div>
+        <div class="card"><h3>Tasa de ahorro mensual</h3><canvas id="chartTasa"></canvas></div>
       </div>
       <div class="grid-2">
         <div class="card">
@@ -192,6 +197,22 @@ import Layout from '../layouts/Layout.astro';
       <div id="positivesList"></div>
       <div class="sec-title">🎯 Plan de acción</div>
       <div id="planList"></div>
+    </div>
+
+    <!-- ── HABITOS ── -->
+    <div class="page" id="page-habitos">
+      <div class="kpi-grid" id="kpiHabitos"></div>
+      <div class="grid-2">
+        <div class="card"><h3>Gasto por día de la semana</h3><canvas id="chartDow"></canvas></div>
+        <div class="card"><h3>Gasto por día del mes</h3><canvas id="chartDom"></canvas></div>
+      </div>
+      <div class="card card-mb"><h3>Categorías principales mes a mes</h3><canvas id="chartCatMes"></canvas></div>
+      <div class="card card-mb"><h3>Calendario de gasto diario (últimas 52 semanas)</h3><div class="cal-wrap"><div class="cal-grid" id="calGasto"></div></div></div>
+      <div class="card card-mb"><h3>Variación por categoría: último mes vs anterior</h3><canvas id="chartVar"></canvas></div>
+      <div class="grid-2">
+        <div class="card"><h3>Distribución por tamaño de compra</h3><canvas id="chartTicket"></canvas></div>
+        <div class="card"><h3>Dónde más se repite el gasto</h3><div class="receipt-list" id="habTopComercios"></div></div>
+      </div>
     </div>
 
     <!-- ── COMENTARIOS ── -->

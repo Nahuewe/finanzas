@@ -6,6 +6,7 @@ import { renderAhorros } from './ahorros.js';
 import { renderComentarios } from './comentarios.js';
 import { renderCuentas } from './cuentas.js';
 import { renderProyeccion } from './proyeccion.js';
+import { renderHabitos, renderResumenExtra } from './habitos.js';
 
 export function renderAll() {
   renderResumen();
@@ -16,6 +17,8 @@ export function renderAll() {
   renderComentarios();
   renderCuentas();
   renderProyeccion();
+  renderHabitos();
+  renderResumenExtra();
 }
 
 export { renderResumen, renderGastos, renderIngresos, renderFlujo, renderAhorros, renderComentarios, renderCuentas, renderProyeccion };

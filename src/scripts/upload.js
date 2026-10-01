@@ -52,7 +52,22 @@ export function processFile(file) {
         comentario: r['Comentario'] || ''
       })).filter((r) => r.monto > 0);
 
-      setRaw({ gastos, ingresos, transferencias: parsed['Transferencias'] || [] });
+      const pick = (r, keys) => {
+        for (const k of keys) {
+          if (r[k] !== undefined && r[k] !== '') return r[k];
+        }
+        return undefined;
+      };
+
+      const transferencias = (parsed['Transferencias'] || []).map((r) => ({
+        fecha: formatDate(pick(r, ['Fecha y hora', 'Fecha'])),
+        cuentaOrigen: pick(r, ["Saliente", 'Cuenta de origen', 'Cuenta origen', 'Origen', 'Desde']) || '',
+        cuentaDestino: pick(r, ["Entrante", 'Cuenta de destino', 'Cuenta destino', 'Destino', 'Hacia']) || '',
+        monto: +pick(r, ["Cantidad en divisa saliente", "Cantidad en la divisa predeterminada", "Cantidad"]) || 0,
+        comentario: pick(r, ['Comentario']) || ''
+      })).filter((r) => r.monto > 0 && r.cuentaOrigen && r.cuentaDestino);
+
+      setRaw({ gastos, ingresos, transferencias });
       setExcludedGasCats(new Set());
       setExcludedIngCats(new Set());
       initApp();
