@@ -5,6 +5,8 @@ import { groupBy, groupByMon, sortedEntries } from './helpers.js';
 import { processFile, initApp } from './upload.js';
 import { DEMO_DATA } from './demo.js';
 import { initComentariosListeners } from './renderers/comentarios.js';
+import { initAnalisisListeners, exportCSV } from './renderers/analisis.js';
+import { initPresupuestoListeners } from './renderers/presupuesto.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('fileInput').addEventListener('change', (e) => {
@@ -101,4 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initComentariosListeners();
+  initAnalisisListeners();
+  initPresupuestoListeners();
+  document.getElementById('exportBtn').addEventListener('click', exportCSV);
 });

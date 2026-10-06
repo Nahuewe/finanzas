@@ -757,3 +757,10 @@
 .cal-wrap { overflow-x: auto; padding-bottom: 6px; }
 .cal-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 12px); grid-auto-columns: 12px; gap: 3px; width: max-content; }
 .cal-cell { border-radius: 2px; }
+
+.bud-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 12px; }
+.bud-track { height: 8px; background: rgba(167,139,250,.1); border-radius: 3px; overflow: hidden; }
+.bud-fill { height: 100%; border-radius: 3px; }
+.bud-input { width: 110px; }
+.bud-note { font-size: .8rem; color: var(--color-ink-dim); margin: 6px 0 10px; line-height: 1.5; }
+.bud-note strong { color: var(--color-ink); }

@@ -29,6 +29,7 @@ import Layout from '../layouts/Layout.astro';
     <header class="app-header">
       <div class="logo">mis<span>finanzas</span></div>
       <div id="dateRangeLabel"></div>
+      <button class="header-btn" id="exportBtn" title="Descargar los datos filtrados">↓ CSV</button>
       <button class="header-btn" id="reloadBtn">↑ Nuevo archivo</button>
     </header>
 
@@ -63,6 +64,8 @@ import Layout from '../layouts/Layout.astro';
       <button class="tab-btn" data-tab="flujo">Flujo</button>
       <button class="tab-btn" data-tab="proyeccion">Proyección</button>
       <button class="tab-btn" data-tab="ahorros"> Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
+      <button class="tab-btn" data-tab="presupuesto">Presupuesto</button>
+      <button class="tab-btn" data-tab="analisis">Análisis</button>
       <button class="tab-btn" data-tab="habitos">Hábitos</button>
       <button class="tab-btn" data-tab="comentarios">Comentarios</button>
       <button class="tab-btn" data-tab="cuentas">Cuentas</button>
@@ -197,6 +200,44 @@ import Layout from '../layouts/Layout.astro';
       <div id="positivesList"></div>
       <div class="sec-title">🎯 Plan de acción</div>
       <div id="planList"></div>
+    </div>
+
+    <!-- ── PRESUPUESTO ── -->
+    <div class="page" id="page-presupuesto">
+      <div class="kpi-grid" id="kpiPresupuesto"></div>
+      <div class="card card-mb">
+        <h3>Topes por categoría — mes más reciente</h3>
+        <div class="bud-toolbar">
+          <button class="header-btn" id="budSuggestBtn">✨ Sugerir topes (prom. 3 meses +5%)</button>
+          <button class="header-btn" id="budClearBtn">✕ Borrar topes</button>
+        </div>
+        <div class="tbl-scroll" id="presupuestoTabla"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h3>Gastos fijos vs variables</h3><canvas id="chartFijos"></canvas></div>
+        <div class="card"><h3>Gastos fijos detectados</h3><div id="fijosList"></div></div>
+      </div>
+      <div class="card card-mb"><h3>Colchón financiero</h3><div id="runwayBox"></div></div>
+    </div>
+
+    <!-- ── ANALISIS ── -->
+    <div class="page" id="page-analisis">
+      <div class="kpi-grid" id="kpiAnalisis"></div>
+      <div class="grid-2">
+        <div class="card"><h3>Tasa de ahorro: contable vs real</h3><canvas id="chartAhorroReal"></canvas></div>
+        <div class="card">
+          <h3>Gasto nominal vs real (ajustado por inflación)</h3>
+          <div class="bud-toolbar"><label class="cuenta-field-label" for="inflInput">Inflación mensual %</label><input class="cuenta-input" id="inflInput" type="number" min="0" step="0.1" placeholder="0" style="width:90px" /></div>
+          <canvas id="chartReal"></canvas>
+        </div>
+      </div>
+      <div class="card card-mb"><h3>Año contra año — gasto por mes</h3><canvas id="chartYoY"></canvas></div>
+      <div class="card card-mb"><h3>Pareto de categorías</h3><div class="bud-note" id="paretoNote"></div><canvas id="chartPareto"></canvas></div>
+      <div class="card card-mb"><h3>Gasto por cuenta mes a mes</h3><canvas id="chartCuentaMes"></canvas></div>
+      <div class="grid-2">
+        <div class="card"><h3>Anomalías detectadas</h3><div id="anomaliasBox"></div></div>
+        <div class="card"><h3>Transferencias entre cuentas</h3><div id="flujoCuentas"></div></div>
+      </div>
     </div>
 
     <!-- ── HABITOS ── -->
