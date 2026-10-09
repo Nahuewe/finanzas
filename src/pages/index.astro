@@ -227,7 +227,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="card"><h3>Tasa de ahorro: contable vs real</h3><canvas id="chartAhorroReal"></canvas></div>
         <div class="card">
           <h3>Gasto nominal vs real (ajustado por inflación)</h3>
-          <div class="bud-toolbar"><label class="cuenta-field-label" for="inflInput">Inflación mensual %</label><input class="cuenta-input" id="inflInput" type="number" min="0" step="0.1" placeholder="0" style="width:90px" /></div>
+          <div class="bud-toolbar"><label class="cuenta-field-label" for="inflInput">Valor manual si falta dato %</label><input class="cuenta-input" id="inflInput" type="number" min="0" step="0.1" placeholder="0" style="width:90px" /><span class="bud-note" id="inflStatus" style="margin:0"></span></div>
           <canvas id="chartReal"></canvas>
         </div>
       </div>

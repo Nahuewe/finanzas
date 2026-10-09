@@ -1,4 +1,4 @@
-import { FILTERED, RAW, C, COLORS } from '../state.js';
+import { FILTERED, RAW, EXCLUDED_ACCOUNTS, C, COLORS } from '../state.js';
 import { fmt, fmtFull, groupBy, groupByMon, allMonths, sortedEntries, mkChart, axX, axY, tooltipARS, legendStyle } from '../helpers.js';
 
 const LS_INFL = 'finanzas_inflacion_v1';
@@ -8,6 +8,31 @@ const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct'
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const sum = (arr) => arr.reduce((a, r) => a + r.monto, 0);
 const label = (m) => m.slice(5) + '/' + m.slice(2, 4);
+const INFL_API = 'https://api.argentinadatos.com/v1/finanzas/indices/inflacion';
+const LS_INFL_CACHE = 'finanzas_inflacion_api_v1';
+const CACHE_MS = 12 * 3600 * 1000;
+let INFL_DATA = {};      // { 'YYYY-MM': % mensual } (INDEC vía argentinadatos.com)
+let INFL_STATE = 'cargando'; // cargando | ok | error
+
+async function loadInflation() {
+  try {
+    const c = JSON.parse(localStorage.getItem(LS_INFL_CACHE) || 'null');
+    if (c && Date.now() - c.t < CACHE_MS) { INFL_DATA = c.data; INFL_STATE = 'ok'; return; }
+  } catch { /* sin cache */ }
+  try {
+    const res = await fetch(INFL_API);
+    if (!res.ok) throw new Error(res.status);
+    const data = {};
+    (await res.json()).forEach((r) => { if (r.fecha >= '2015' && typeof r.valor === 'number') data[r.fecha.slice(0, 7)] = r.valor; });
+    INFL_DATA = data;
+    INFL_STATE = 'ok';
+    try { localStorage.setItem(LS_INFL_CACHE, JSON.stringify({ t: Date.now(), data })); } catch { /* storage bloqueado */ }
+  } catch {
+    try { const c = JSON.parse(localStorage.getItem(LS_INFL_CACHE) || 'null'); if (c) { INFL_DATA = c.data; INFL_STATE = 'ok'; return; } } catch { /* nada */ }
+    INFL_STATE = 'error';
+  }
+}
+
 const getInfl = () => { try { return +localStorage.getItem(LS_INFL) || 0; } catch { return 0; } };
 
 export function renderAnalisis() {
@@ -30,11 +55,23 @@ export function renderAnalisis() {
   const cons = g.length - gSave.length ? tG - tS : tG;
 
   // ── Inflación ──
-  const infl = getInfl();
+  // mes a mes con datos reales; meses sin publicar (el último) usan el último dato conocido o el valor manual
+  const manual = getInfl();
+  const known = Object.keys(INFL_DATA).sort();
+  const fallback = manual || (known.length ? INFL_DATA[known.at(-1)] : 0);
+  const inflOf = (m) => (INFL_DATA[m] !== undefined ? INFL_DATA[m] : fallback);
   const inflInput = document.getElementById('inflInput');
-  if (inflInput && document.activeElement !== inflInput) inflInput.value = infl || '';
-  const factor = (idx) => Math.pow(1 + infl / 100, months.length - 1 - idx);
-  const realG = months.map((m, k) => (monG[m] || 0) * factor(k));
+  if (inflInput && document.activeElement !== inflInput) inflInput.value = manual || '';
+  const factors = months.map(() => 1);
+  for (let k = months.length - 2; k >= 0; k--) factors[k] = factors[k + 1] * (1 + inflOf(months[k + 1]) / 100);
+  const realG = months.map((m, k) => (monG[m] || 0) * factors[k]);
+  const infl = INFL_STATE === 'ok' || manual ? (Math.pow(factors[0], 1 / Math.max(1, months.length - 1)) - 1) * 100 : 0;
+  const stEl = document.getElementById('inflStatus');
+  if (stEl) {
+    const last = known.at(-1);
+    stEl.textContent = INFL_STATE === 'ok' ? `INDEC (argentinadatos.com) · último dato ${last}: ${INFL_DATA[last]}%`
+      : INFL_STATE === 'cargando' ? 'Cargando inflación…' : 'No se pudo consultar la API; usando el valor manual';
+  }
   const half = Math.max(1, Math.floor(months.length / 2));
   const avg = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
   const nomChange = (avg(months.slice(-half).map((m) => monG[m] || 0)) / (avg(months.slice(0, half).map((m) => monG[m] || 0)) || 1) - 1) * 100;
@@ -45,7 +82,7 @@ export function renderAnalisis() {
     <div class="kpi ${realRate >= 20 ? 'green' : realRate >= 10 ? 'yellow' : 'red'}"><div class="label">Ahorro real</div><div class="value">${Math.round(realRate)}%</div><div class="sub">incluye ${fmt(tS)} en ahorro/dólares</div></div>
     <div class="kpi blue"><div class="label">Consumo mensual</div><div class="value">${fmt(cons / months.length)}</div><div class="sub">sin ahorro ni inversión</div></div>
     <div class="kpi orange"><div class="label">Gasto: variación nominal</div><div class="value">${nomChange >= 0 ? '+' : ''}${nomChange.toFixed(0)}%</div><div class="sub">2ª mitad vs 1ª mitad</div></div>
-    <div class="kpi ${realChange <= 0 ? 'green' : 'red'}"><div class="label">Gasto: variación real</div><div class="value">${realChange >= 0 ? '+' : ''}${realChange.toFixed(0)}%</div><div class="sub">${infl ? `con inflación ${infl}%/mes` : 'cargá la inflación'}</div></div>
+    <div class="kpi ${realChange <= 0 ? 'green' : 'red'}"><div class="label">Gasto: variación real</div><div class="value">${realChange >= 0 ? '+' : ''}${realChange.toFixed(0)}%</div><div class="sub">${infl ? `inflación prom. ${infl.toFixed(1)}%/mes` : 'sin datos de inflación'}</div></div>
     <div class="kpi green"><div class="label">Ahorro acumulado</div><div class="value">${fmt(tI - tG + tS)}</div><div class="sub">neto + ahorro/dólares</div></div>`;
 
   // ── Tasa de ahorro contable vs real ──
@@ -132,7 +169,7 @@ export function renderAnalisis() {
   // ── Flujo entre cuentas ──
   const dates = [...g, ...i].map((r) => r.fecha).filter(Boolean).sort();
   const [d0, d1] = [dates[0], dates.at(-1)];
-  const tr = RAW.transferencias.filter((r) => r.fecha >= d0 && r.fecha <= d1);
+  const tr = RAW.transferencias.filter((r) => r.fecha >= d0 && r.fecha <= d1 && !EXCLUDED_ACCOUNTS.has(r.cuentaOrigen) && !EXCLUDED_ACCOUNTS.has(r.cuentaDestino));
   const flows = {};
   tr.forEach((r) => { const k = r.cuentaOrigen + '→' + r.cuentaDestino; flows[k] = flows[k] || { o: r.cuentaOrigen, d: r.cuentaDestino, t: 0, n: 0 }; flows[k].t += r.monto; flows[k].n++; });
   const fl = Object.values(flows).sort((a, b) => b.t - a.t);
@@ -142,6 +179,7 @@ export function renderAnalisis() {
 }
 
 export function initAnalisisListeners() {
+  loadInflation().then(() => { if (document.getElementById('kpiAnalisis')?.children.length) renderAnalisis(); });
   document.getElementById('inflInput')?.addEventListener('change', (e) => {
     try { localStorage.setItem(LS_INFL, String(Math.max(0, +e.target.value || 0))); } catch { /* storage bloqueado */ }
     renderAnalisis();

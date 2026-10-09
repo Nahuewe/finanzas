@@ -1,9 +1,11 @@
-import { RAW, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS, SKIP_CATS, setExcludedGasCats, setExcludedIngCats } from '../state.js';
+import { RAW, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS, EXCLUDED_ACCOUNTS, SKIP_CATS, setExcludedGasCats, setExcludedIngCats, setExcludedAccounts } from '../state.js';
 import { applyFilters } from '../filters.js';
 
 export function buildExcludePanel() {
   const gasCats = [...new Set(RAW.gastos.filter((r) => !SKIP_CATS.has(r.cat)).map((r) => r.cat).filter(Boolean))].sort();
   const ingCats = [...new Set(RAW.ingresos.map((r) => r.cat).filter(Boolean))].sort();
+
+  const accounts = [...new Set([...RAW.gastos, ...RAW.ingresos].map((r) => r.cuenta).filter(Boolean))].sort();
 
   const panel = document.getElementById('excludePanel');
   if (!panel) return;
@@ -31,6 +33,17 @@ export function buildExcludePanel() {
         `).join('')}
       </div>
     </div>
+    <div class="exclude-group">
+      <div class="exclude-label">EXCLUIR CUENTAS</div>
+      <div class="exclude-chips">
+        ${accounts.map((cat) => `
+          <label class="exclude-chip ${EXCLUDED_ACCOUNTS.has(cat) ? 'excluded' : ''}" data-cat="${cat}" data-type="acc">
+            <input type="checkbox" ${EXCLUDED_ACCOUNTS.has(cat) ? '' : 'checked'} />
+            <span>${cat}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
   `;
 
   panel.querySelectorAll('.exclude-chip input').forEach((cb) => {
@@ -44,6 +57,11 @@ export function buildExcludePanel() {
         if (!e.target.checked) next.add(cat);
         else next.delete(cat);
         setExcludedGasCats(next);
+      } else if (type === 'acc') {
+        const next = new Set(EXCLUDED_ACCOUNTS);
+        if (!e.target.checked) next.add(cat);
+        else next.delete(cat);
+        setExcludedAccounts(next);
       } else {
         const next = new Set(EXCLUDED_ING_CATS);
         if (!e.target.checked) next.add(cat);

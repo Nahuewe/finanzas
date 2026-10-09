@@ -1,4 +1,4 @@
-import { RAW } from '../state.js';
+import { RAW, EXCLUDED_ACCOUNTS } from '../state.js';
 import { fmtFull, sortedEntries } from '../helpers.js';
 
 let COM_SEARCH = '';
@@ -13,7 +13,7 @@ function buildComentariosUI() {
   const container = document.getElementById('comCatList');
   if (!container) return;
 
-  const data = COM_TYPE === 'gastos' ? RAW.gastos : RAW.ingresos;
+  const data = (COM_TYPE === 'gastos' ? RAW.gastos : RAW.ingresos).filter((r) => !EXCLUDED_ACCOUNTS.has(r.cuenta));
   const search = COM_SEARCH.toLowerCase();
 
   const bycat = {};

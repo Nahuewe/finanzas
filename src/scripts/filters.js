@@ -1,5 +1,5 @@
 import {
-  RAW, FILTERS, SKIP_CATS, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS,
+  RAW, FILTERS, SKIP_CATS, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS, EXCLUDED_ACCOUNTS,
   setFiltered, setFilters, OPEN_CATS,
 } from './state.js';
 import { renderAll } from './renderers/index.js';
@@ -8,6 +8,11 @@ import { buildExcludePanel } from './renderers/excludePanel.js';
 export function applyFilters() {
   let gasto = RAW.gastos.filter((r) => !SKIP_CATS.has(r.cat));
   let ingreso = [...RAW.ingresos];
+
+  if (EXCLUDED_ACCOUNTS.size > 0) {
+    gasto = gasto.filter((r) => !EXCLUDED_ACCOUNTS.has(r.cuenta));
+    ingreso = ingreso.filter((r) => !EXCLUDED_ACCOUNTS.has(r.cuenta));
+  }
 
   if (FILTERS.year !== 'all') {
     gasto = gasto.filter((r) => r.fecha?.startsWith(FILTERS.year));

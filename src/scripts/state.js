@@ -29,6 +29,7 @@ export const SKIP_CATS = new Set(['']);
 
 export let EXCLUDED_GAS_CATS = new Set();
 export let EXCLUDED_ING_CATS = new Set();
+export let EXCLUDED_ACCOUNTS = new Set();
 
 export function setRaw(data) { RAW = data; }
 export function setFiltered(data) { FILTERED = data; }
@@ -36,3 +37,5 @@ export function setFilters(data) { FILTERS = data; }
 export function setCatSearch(v) { CAT_SEARCH = v; }
 export function setExcludedGasCats(s) { EXCLUDED_GAS_CATS = s; }
 export function setExcludedIngCats(s) { EXCLUDED_ING_CATS = s; }
+export function setExcludedAccounts(s) { EXCLUDED_ACCOUNTS = s; }
+export const isExcludedAcc = (r) => EXCLUDED_ACCOUNTS.has(r.cuenta);

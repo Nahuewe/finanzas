@@ -1,4 +1,4 @@
-import { setRaw, setExcludedGasCats, setExcludedIngCats } from './state.js';
+import { RAW, setRaw, setExcludedGasCats, setExcludedIngCats, setExcludedAccounts } from './state.js';
 import { buildFilterOptions } from './filters.js';
 import { applyFilters } from './filters.js';
 
@@ -84,6 +84,9 @@ export function initApp() {
   showLoading(false);
   document.getElementById('uploadScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  // las cuentas de reserva (ahorro) no cuentan como flujo de gastos/ingresos
+  const accs = new Set([...RAW.gastos, ...RAW.ingresos].map((r) => r.cuenta).filter(Boolean));
+  setExcludedAccounts(new Set([...accs].filter((a) => /^reserva/i.test(a))));
   buildFilterOptions();
   applyFilters();
 }
