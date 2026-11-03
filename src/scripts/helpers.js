@@ -1,4 +1,4 @@
-import { CHARTS } from './state.js';
+import { CHARTS, C } from './state.js';
 
 export const fmt = (n) =>
   Math.abs(n) >= 1e6
@@ -46,18 +46,37 @@ export function mkChart(id, config) {
   CHARTS[id] = new Chart(ctx, config);
 }
 
+// getters: el color se resuelve al usarse, así respeta el tema activo
 export const axX = {
-  ticks: { color: '#8b81b0', font: { size: 9, family: 'JetBrains Mono' }, maxRotation: 45 },
-  grid: { color: '#221c3b' }
+  get ticks() { return { color: C.inkFaint, font: { size: 9, family: 'JetBrains Mono' }, maxRotation: 45 }; },
+  get grid() { return { color: C.grid }; }
 };
 
 export const axY = (cb) => ({
-  ticks: { color: '#8b81b0', callback: cb || ((v) => fmt(v)), font: { size: 9, family: 'JetBrains Mono' } },
-  grid: { color: '#221c3b' }
+  ticks: { color: C.inkFaint, callback: cb || ((v) => fmt(v)), font: { size: 9, family: 'JetBrains Mono' } },
+  grid: { color: C.grid }
 });
 
 export const tooltipARS = { callbacks: { label: (ctx) => fmtFull(ctx.raw) } };
 
 export const legendStyle = {
-  labels: { color: '#b9b0d9', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 }
+  get labels() { return { color: C.inkDim, font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 }; }
 };
+
+export const esc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+export const escRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export const sum = (arr, key = 'monto') => arr.reduce((a, r) => a + r[key], 0);
+export const monthLabel = (m) => m.slice(5) + '/' + m.slice(2, 4);
+export const avg = (arr) => (arr.length ? arr.reduce((a, v) => a + v, 0) / arr.length : 0);
+
+/** Opciones base de Chart.js; `extra` pisa/une plugins y scales. */
+export function chartOpts({ legend = false, tooltip = tooltipARS, x = axX, y = axY(), extra = {} } = {}) {
+  return {
+    responsive: true,
+    ...extra,
+    plugins: { legend: legend ? legendStyle : { display: false }, tooltip, ...(extra.plugins || {}) },
+    scales: { x, y, ...(extra.scales || {}) },
+  };
+}

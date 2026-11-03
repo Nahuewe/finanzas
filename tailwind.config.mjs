@@ -5,41 +5,41 @@ export default {
     extend: {
       colors: {
         bg: {
-          DEFAULT: '#0e0b17',
-          raised: '#17132a',
-          raised2: '#1f1a38',
-          sunken: '#090711',
+          DEFAULT: 'rgb(var(--c-bg) / <alpha-value>)',
+          raised: 'rgb(var(--c-raised) / <alpha-value>)',
+          raised2: 'rgb(var(--c-raised2) / <alpha-value>)',
+          sunken: 'rgb(var(--c-sunken) / <alpha-value>)',
         },
         line: {
-          DEFAULT: '#2f2750',
-          soft: '#221c3b',
+          DEFAULT: 'rgb(var(--c-line) / <alpha-value>)',
+          soft: 'rgb(var(--c-line-soft) / <alpha-value>)',
         },
         ink: {
-          DEFAULT: '#efeaff',
-          dim: '#b9b0d9',
-          faint: '#8b81b0',
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)',
+          dim: 'rgb(var(--c-ink-dim) / <alpha-value>)',
+          faint: 'rgb(var(--c-ink-faint) / <alpha-value>)',
         },
         purple: {
-          DEFAULT: '#a78bfa',
-          deep: '#7c5cf0',
-          soft: 'rgba(167,139,250,0.16)',
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          deep: 'rgb(var(--c-accent-deep) / <alpha-value>)',
+          soft: 'rgb(var(--c-accent) / 0.16)',
         },
-        violet: '#c4a1ff',
-        lavender: '#e3dcff',
+        violet: 'rgb(var(--c-violet) / <alpha-value>)',
+        lavender: 'rgb(var(--c-lavender) / <alpha-value>)',
         emerald: {
-          fin: '#4ade80',
-          deep: '#22c55e',
+          fin: 'rgb(var(--c-pos) / <alpha-value>)',
+          deep: 'rgb(var(--c-pos-deep) / <alpha-value>)',
         },
         rose: {
-          fin: '#fb7185',
-          deep: '#e11d48',
+          fin: 'rgb(var(--c-neg) / <alpha-value>)',
+          deep: 'rgb(var(--c-neg-deep) / <alpha-value>)',
         },
         indigo: {
-          fin: '#818cf8',
+          fin: 'rgb(var(--c-indigo) / <alpha-value>)',
         },
-        gold: '#fbbf24',
+        gold: 'rgb(var(--c-gold) / <alpha-value>)',
         orange: {
-          fin: '#fb923c',
+          fin: 'rgb(var(--c-orange) / <alpha-value>)',
         },
       },
       fontFamily: {

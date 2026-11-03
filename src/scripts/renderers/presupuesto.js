@@ -1,48 +1,25 @@
-import { FILTERED, RAW, C, COLORS } from '../state.js';
-import { fmt, fmtFull, groupBy, groupByMon, mkChart, legendStyle } from '../helpers.js';
+import { FILTERED, METRICS, COLORS, C } from '../state.js';
+import { fmt, fmtFull, esc, sum, groupBy, mkChart, legendStyle } from '../helpers.js';
+import { store } from '../storage.js';
+import { detectFixed } from '../metrics.js';
+import { allAccounts, accountCurrency, loadSaldos, countedBalance } from '../accounts.js';
+import { FX } from '../externalData.js';
 
-const LS_BUDGET = 'finanzas_presupuestos_v1';
-const LS_SALDOS = 'finanzas_saldos_v2';
+let BUD_MONTH = null; // null = mes más reciente del período filtrado
 
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const load = (k) => { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } };
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage bloqueado */ } };
-const sum = (arr) => arr.reduce((a, r) => a + r.monto, 0);
+const loadBudgets = () => store.get('presupuestos', {}) || {};
+const saveBudgets = (b) => store.set('presupuestos', b);
 
 function monthInfo(g) {
-  const months = [...new Set(g.map((r) => r.fecha?.slice(0, 7)).filter(Boolean))].sort();
-  const cur = months.at(-1);
-  if (!cur) return null;
+  const months = METRICS.gMonths;
+  if (!months.length) return null;
+  const cur = months.includes(BUD_MONTH) ? BUD_MONTH : months.at(-1);
   const [y, m] = cur.split('-').map(Number);
   const daysInMonth = new Date(y, m, 0).getDate();
-  const lastDay = Math.max(...g.filter((r) => r.fecha.startsWith(cur)).map((r) => +r.fecha.slice(8, 10)));
+  const isLast = cur === months.at(-1);
+  // solo el último mes del archivo puede estar incompleto
+  const lastDay = isLast ? Math.max(...g.filter((r) => r.fecha.startsWith(cur)).map((r) => +r.fecha.slice(8, 10))) : daysInMonth;
   return { months, cur, daysInMonth, elapsed: Math.min(lastDay, daysInMonth) };
-}
-
-/** Gastos fijos: mismo concepto (cat + comentario) presente en la mayoría de los meses con monto estable. */
-export function detectFixed(g) {
-  const months = new Set(g.map((r) => r.fecha?.slice(0, 7)).filter(Boolean));
-  const groups = {};
-  g.forEach((r) => {
-    const c = String(r.comentario || '').trim().toLowerCase();
-    if (!c) return;
-    const k = r.cat + '||' + c;
-    (groups[k] = groups[k] || { cat: r.cat, name: r.comentario, items: [] }).items.push(r);
-  });
-  const minMonths = Math.max(3, Math.ceil(months.size * 0.6));
-  const fixed = [];
-  Object.values(groups).forEach((gr) => {
-    const perMonth = groupByMon(gr.items);
-    const vals = Object.values(perMonth);
-    if (vals.length < minMonths) return;
-    const mean = vals.reduce((a, v) => a + v, 0) / vals.length;
-    const sd = Math.sqrt(vals.reduce((a, v) => a + (v - mean) ** 2, 0) / vals.length);
-    // una serie con inflación sostenida también es "fija": se mide el desvío contra la tendencia mes a mes
-    const steps = vals.slice(1).map((v, i) => Math.abs(v / vals[i] - 1));
-    const stepAvg = steps.length ? steps.reduce((a, v) => a + v, 0) / steps.length : 1;
-    if (sd / mean < 0.35 || stepAvg < 0.12) fixed.push({ ...gr, total: sum(gr.items), avg: mean, months: vals.length });
-  });
-  return fixed.sort((a, b) => b.total - a.total);
 }
 
 export function renderPresupuesto() {
@@ -56,11 +33,15 @@ export function renderPresupuesto() {
     tbl.innerHTML = '<div class="empty-state">Sin gastos en el período filtrado.</div>';
     document.getElementById('fijosList').innerHTML = '';
     document.getElementById('runwayBox').innerHTML = '';
+    document.getElementById('budMonth').innerHTML = '';
     return;
   }
 
-  const budgets = load(LS_BUDGET);
   const { cur, months, daysInMonth, elapsed } = info;
+  const sel = document.getElementById('budMonth');
+  sel.innerHTML = [...months].reverse().map((m) => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
+
+  const budgets = loadBudgets();
   const inMonth = g.filter((r) => r.fecha.startsWith(cur));
   const spent = groupBy(inMonth, 'cat');
   const cats = [...new Set([...Object.keys(spent), ...Object.keys(budgets)])].sort((a, b) => (spent[b] || 0) - (spent[a] || 0));
@@ -75,7 +56,7 @@ export function renderPresupuesto() {
     const pct = b ? s / b * 100 : 0;
     const state = !b ? '' : s > b ? 'neg' : proj > b ? 'warn' : 'pos';
     const msg = !b ? 'sin tope' : s > b ? `+${fmt(s - b)} excedido` : proj > b ? `ritmo: ${fmt(proj)}` : `quedan ${fmt(b - s)}`;
-    const color = state === 'neg' ? C.red : state === 'warn' ? '#fbbf24' : C.green;
+    const color = state === 'neg' ? C.red : state === 'warn' ? C.gold : C.green;
     return `<tr>
       <td><strong>${esc(c)}</strong></td>
       <td><input class="cuenta-input bud-input" data-cat="${esc(c)}" type="number" min="0" step="1000" placeholder="$0" value="${b || ''}" /></td>
@@ -94,69 +75,78 @@ export function renderPresupuesto() {
     <div class="kpi orange"><div class="label">Gasto total del mes</div><div class="value">${fmt(sum(inMonth))}</div><div class="sub">proyección ${fmt(sum(inMonth) * pace)}</div></div>`;
 
   tbl.innerHTML = `<table class="tbl"><thead><tr><th>Categoría</th><th>Tope mensual</th><th class="r">Gastado</th><th>Avance</th><th class="r">Estado</th></tr></thead><tbody>${rows}</tbody></table>`;
-  tbl.querySelectorAll('.bud-input').forEach((inp) => inp.addEventListener('change', () => {
-    const b = load(LS_BUDGET);
-    const v = parseFloat(inp.value);
-    if (v > 0) b[inp.dataset.cat] = v; else delete b[inp.dataset.cat];
-    save(LS_BUDGET, b);
-    renderPresupuesto();
-  }));
 
   // ── gastos fijos vs variables ──
   const fixed = detectFixed(g);
-  const fixedTotal = fixed.reduce((a, f) => a + f.total, 0);
-  const total = sum(g);
+  const fixedTotal = sum(fixed, 'total');
+  const total = METRICS.tG;
   const variable = Math.max(0, total - fixedTotal);
-  const fijosEl = document.getElementById('fijosList');
-  const nM = months.length || 1;
-  fijosEl.innerHTML = fixed.length
+  const nM = METRICS.gMonths.length || 1;
+  document.getElementById('fijosList').innerHTML = fixed.length
     ? `<div class="receipt-list">${fixed.slice(0, 8).map((f) => `<div class="receipt-row"><span class="receipt-name">${esc(f.name)}</span><span class="receipt-meta">${esc(f.cat)} · ${f.months} meses</span><span class="receipt-amt">${fmt(f.avg)}/mes</span></div>`).join('')}</div>
        <div class="bud-note">Fijos ≈ <strong>${fmt(fixedTotal / nM)}/mes</strong> (${total ? Math.round(fixedTotal / total * 100) : 0}% del gasto). Variables ≈ <strong>${fmt(variable / nM)}/mes</strong>. Es el piso que necesitás cubrir cada mes.</div>`
     : '<div class="empty-state">No se detectaron gastos fijos (se buscan conceptos repetidos en la mayoría de los meses).</div>';
   mkChart('chartFijos', {
     type: 'doughnut',
-    data: { labels: ['Fijos', 'Variables'], datasets: [{ data: [fixedTotal, variable], backgroundColor: [COLORS[0], COLORS[2]], borderColor: '#0e0b17', borderWidth: 2 }] },
-    options: { responsive: true, cutout: '62%', plugins: { legend: legendStyle, tooltip: { callbacks: { label: (c) => c.label + ': ' + fmtFull(c.raw) } } } }
+    data: { labels: ['Fijos', 'Variables'], datasets: [{ data: [fixedTotal, variable], backgroundColor: [COLORS[0], COLORS[2]], borderColor: C.bg, borderWidth: 2 }] },
+    options: { responsive: true, cutout: '62%', plugins: { legend: legendStyle, tooltip: { callbacks: { label: (c) => c.label + ': ' + fmtFull(c.raw) } } } },
   });
 
   // ── colchón / runway ──
-  const saldos = load(LS_SALDOS);
-  const entries = Object.entries(saldos);
-  const recent = months.slice(-3);
+  const saldos = loadSaldos();
+  const withSaldo = allAccounts().filter((a) => saldos[a]);
+  const recent = METRICS.gMonths.slice(-3);
   const avgSpend = recent.length ? sum(g.filter((r) => recent.some((m) => r.fecha.startsWith(m)))) / recent.length : 0;
   const avgFixed = fixedTotal / nM;
   const runway = document.getElementById('runwayBox');
-  if (!entries.length) {
-    runway.innerHTML = `<div class="empty-state">Cargá los saldos en la pestaña <strong>Cuentas</strong> para calcular cuántos meses de gasto cubre tu colchón.</div>`;
+  if (!withSaldo.length) {
+    runway.innerHTML = '<div class="empty-state">Cargá los saldos en la pestaña <strong>Cuentas</strong> para calcular cuántos meses de gasto cubre tu colchón.</div>';
     return;
   }
-  const flujoPost = (cuenta, corte) => {
-    const f = (a, k) => a.filter((r) => r[k] === cuenta && r.fecha > corte);
-    return sum(f(RAW.ingresos, 'cuenta')) - sum(f(RAW.gastos, 'cuenta')) - sum(f(RAW.transferencias, 'cuentaOrigen')) + sum(f(RAW.transferencias, 'cuentaDestino'));
-  };
-  const patrimonio = entries.reduce((a, [c, e]) => a + e.monto + flujoPost(c, e.fecha), 0);
+  const rate = FX.last?.venta || 0;
+  const patrimonio = withSaldo.reduce((a, c) => {
+    const est = countedBalance(c, saldos);
+    return a + (accountCurrency(c) === 'USD' ? est * rate : est);
+  }, 0);
   const mesesTot = avgSpend ? patrimonio / avgSpend : 0;
   const mesesFijos = avgFixed ? patrimonio / avgFixed : 0;
   const level = mesesTot >= 6 ? 'tip' : mesesTot >= 3 ? 'info' : 'warn';
   runway.innerHTML = `
-    <div class="insight i-${level}"><div class="ico">🛟</div><div class="body"><strong>${mesesTot.toFixed(1)} meses de colchón</strong>Con ${fmtFull(patrimonio)} en ${entries.length} cuenta(s) y un gasto promedio de ${fmt(avgSpend)}/mes (últimos ${recent.length} meses).${avgFixed ? ` Cubriendo solo los gastos fijos (${fmt(avgFixed)}/mes) alcanzaría para ${mesesFijos.toFixed(1)} meses.` : ''} Meta sugerida: 3 a 6 meses.</div></div>`;
+    <div class="insight i-${level}"><div class="ico">🛟</div><div class="body"><strong>${mesesTot.toFixed(1)} meses de colchón</strong>Con ${fmtFull(patrimonio)} en ${withSaldo.length} cuenta(s) y un gasto promedio de ${fmt(avgSpend)}/mes (últimos ${recent.length} meses).${avgFixed ? ` Cubriendo solo los gastos fijos (${fmt(avgFixed)}/mes) alcanzaría para ${mesesFijos.toFixed(1)} meses.` : ''} Meta sugerida: 3 a 6 meses.</div></div>`;
 }
 
 export function initPresupuestoListeners() {
+  document.getElementById('budMonth')?.addEventListener('change', (e) => {
+    BUD_MONTH = e.target.value;
+    renderPresupuesto();
+  });
+
+  document.getElementById('presupuestoTabla')?.addEventListener('change', (e) => {
+    const inp = e.target.closest('.bud-input');
+    if (!inp) return;
+    const b = loadBudgets();
+    const v = parseFloat(inp.value);
+    if (v > 0) b[inp.dataset.cat] = v; else delete b[inp.dataset.cat];
+    saveBudgets(b);
+    renderPresupuesto();
+  });
+
   document.getElementById('budSuggestBtn')?.addEventListener('click', () => {
     const g = FILTERED.gastos;
     const info = monthInfo(g);
     if (!info) return;
-    const prev = info.months.slice(-4, -1);
-    const base = prev.length ? prev : info.months.slice(-1);
-    const b = load(LS_BUDGET);
+    const idx = info.months.indexOf(info.cur);
+    const prev = info.months.slice(Math.max(0, idx - 3), idx);
+    const base = prev.length ? prev : [info.cur];
+    const b = loadBudgets();
     Object.entries(groupBy(g.filter((r) => base.some((m) => r.fecha.startsWith(m))), 'cat')).forEach(([c, v]) => {
       b[c] = Math.round(v / base.length * 1.05 / 1000) * 1000 || 1000;
     });
-    save(LS_BUDGET, b);
+    saveBudgets(b);
     renderPresupuesto();
   });
+
   document.getElementById('budClearBtn')?.addEventListener('click', () => {
-    if (confirm('¿Borrar todos los topes?')) { save(LS_BUDGET, {}); renderPresupuesto(); }
+    if (confirm('¿Borrar todos los topes?')) { saveBudgets({}); renderPresupuesto(); }
   });
 }

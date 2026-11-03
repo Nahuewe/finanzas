@@ -1,12 +1,10 @@
-import { FILTERED, C, COLORS } from '../state.js';
-import { fmt, fmtFull, groupBy, groupByMon, sortedEntries, allMonths, mkChart, axX, axY, tooltipARS, legendStyle } from '../helpers.js';
+import { FILTERED, METRICS, C, COLORS, A } from '../state.js';
+import { fmt, fmtFull, sortedEntries, mkChart, chartOpts, monthLabel, legendStyle, tooltipARS } from '../helpers.js';
 
 export function renderResumen() {
   const g = FILTERED.gastos, i = FILTERED.ingresos;
-  const tG = g.reduce((a, r) => a + r.monto, 0);
-  const tI = i.reduce((a, r) => a + r.monto, 0);
+  const { monG, monI, months, tG, tI, byCatG, byCatI } = METRICS;
   const neto = tI - tG;
-  const months = allMonths(g, i);
   const avgG = months.length ? tG / months.length : 0;
 
   document.getElementById('kpiResumen').innerHTML = `
@@ -17,22 +15,20 @@ export function renderResumen() {
     <div class="kpi purple"><div class="label">Tasa Ahorro</div><div class="value">${tI ? ((neto / tI) * 100).toFixed(0) : '0'}%</div><div class="sub">de ingresos</div></div>
     <div class="kpi orange"><div class="label">Meses</div><div class="value">${months.length}</div><div class="sub">registrados</div></div>`;
 
-  const monG = groupByMon(g), monI = groupByMon(i);
-
   mkChart('chartResumen', {
     type: 'bar',
     data: {
-      labels: months.map((m) => m.slice(5) + '/' + m.slice(2, 4)),
+      labels: months.map(monthLabel),
       datasets: [
         { label: 'Ingresos', data: months.map((m) => monI[m] || 0), backgroundColor: C.greenSoftBg + '.25)', borderColor: C.green, borderWidth: 1.5, borderRadius: 2 },
         { label: 'Gastos',   data: months.map((m) => monG[m] || 0), backgroundColor: C.redSoftBg  + '.25)', borderColor: C.red,   borderWidth: 1.5, borderRadius: 2 }
       ]
     },
-    options: { responsive: true, plugins: { legend: { display: true, labels: legendStyle.labels }, tooltip: tooltipARS }, scales: { x: axX, y: axY() } }
+    options: chartOpts({ legend: true })
   });
 
-  const ingCats = sortedEntries(groupBy(i, 'cat')).slice(0, 7);
-  const gasCats = sortedEntries(groupBy(g, 'cat')).slice(0, 8);
+  const ingCats = sortedEntries(byCatI).slice(0, 7);
+  const gasCats = sortedEntries(byCatG).slice(0, 8);
 
   mkChart('chartIngDonut', {
     type: 'doughnut',
@@ -67,11 +63,11 @@ function renderHeatmap(months, monG, monI) {
     const pos = v >= 0;
     const bgAlpha = (0.10 + intensity * 0.55).toFixed(2);
     const bg = pos
-      ? `rgba(74,222,128,${bgAlpha})`
-      : `rgba(251,113,133,${bgAlpha})`;
+      ? `rgba(${C.rgb.pos},${bgAlpha})`
+      : `rgba(${C.rgb.neg},${bgAlpha})`;
     const borderColor = pos
-      ? `rgba(74,222,128,${(0.15 + intensity * 0.5).toFixed(2)})`
-      : `rgba(251,113,133,${(0.15 + intensity * 0.5).toFixed(2)})`;
+      ? `rgba(${C.rgb.pos},${(0.15 + intensity * 0.5).toFixed(2)})`
+      : `rgba(${C.rgb.neg},${(0.15 + intensity * 0.5).toFixed(2)})`;
 
     const [year, month] = m.split('-');
     const monthName = MONTH_NAMES[parseInt(month, 10) - 1];
@@ -97,7 +93,7 @@ let acumSel = null;
 
 const MNAMES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-function monthLabel(ym) {
+function monthLong(ym) {
   const [y, m] = ym.split('-');
   return `${MNAMES_FULL[parseInt(m, 10) - 1]} ${y}`;
 }
@@ -145,7 +141,7 @@ function renderAcumuladoMes(g) {
   }
 
   function buildOptions(selectedYm) {
-    return monthsDesc.map((ym) => `<option value="${ym}" ${ym === selectedYm ? 'selected' : ''}>${monthLabel(ym)}</option>`).join('');
+    return monthsDesc.map((ym) => `<option value="${ym}" ${ym === selectedYm ? 'selected' : ''}>${monthLong(ym)}</option>`).join('');
   }
 
   el.innerHTML = `
@@ -237,11 +233,11 @@ function renderAcumuladoMes(g) {
     } else {
       kpisEl.innerHTML = `
         <div class="acum-kpi">
-          <span class="acum-kpi-label">${monthLabel(acumSel.a)}${isCurrentA ? ' (hasta hoy)' : ''}</span>
+          <span class="acum-kpi-label">${monthLong(acumSel.a)}${isCurrentA ? ' (hasta hoy)' : ''}</span>
           <span class="acum-kpi-val" style="color:var(--red)">${fmtFull(a.total)}</span>
         </div>
         <div class="acum-kpi">
-          <span class="acum-kpi-label">${monthLabel(acumSel.b)}</span>
+          <span class="acum-kpi-label">${monthLong(acumSel.b)}</span>
           <span class="acum-kpi-val" style="color:var(--color-ink-dim)">${fmtFull(b.total)}</span>
         </div>
         ${diffPct !== null ? `<div class="acum-kpi">
@@ -256,11 +252,11 @@ function renderAcumuladoMes(g) {
         labels: Array.from({ length: maxDays }, (_, i) => String(i + 1)),
         datasets: [
           {
-            label: monthLabel(acumSel.a),
+            label: monthLong(acumSel.a),
             data: dataA,
             dayAmounts: dayDataA,
             borderColor: C.red,
-            backgroundColor: 'rgba(251,113,133,.08)',
+            backgroundColor: A('neg', .08),
             borderWidth: 2,
             fill: true,
             tension: 0.3,
@@ -269,7 +265,7 @@ function renderAcumuladoMes(g) {
             spanGaps: false,
           },
           {
-            label: monthLabel(acumSel.b),
+            label: monthLong(acumSel.b),
             data: dataB,
             dayAmounts: dayDataB,
             borderColor: C.inkFaint,
@@ -288,7 +284,7 @@ function renderAcumuladoMes(g) {
         responsive: true,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { display: true, labels: { color: '#b9b0d9', font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 } },
+          legend: { display: true, labels: { color: C.inkDim, font: { size: 10, family: 'JetBrains Mono' }, boxWidth: 10, padding: 8 } },
           tooltip: {
             callbacks: {
               title: (items) => `Día ${items[0].label}`,
@@ -302,8 +298,8 @@ function renderAcumuladoMes(g) {
           },
         },
         scales: {
-          x: { ticks: { color: '#8b81b0', font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#221c3b' } },
-          y: { ticks: { color: '#8b81b0', callback: (v) => fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#221c3b' } },
+          x: { ticks: { color: C.inkFaint, font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: C.grid } },
+          y: { ticks: { color: C.inkFaint, callback: (v) => fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: C.grid } },
         },
       },
     });

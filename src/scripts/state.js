@@ -1,21 +1,32 @@
-export const C = {
-  ink: '#efeaff',
-  inkDim: '#b9b0d9',
-  inkFaint: '#8b81b0',
-  grid: '#221c3b',
-  bg: '#0e0b17',
-  purple: '#a78bfa',
-  purpleSoftBg: 'rgba(167,139,250,.12)',
-  green: '#4ade80',
-  greenSoftBg: 'rgba(74,222,128,',
-  red: '#fb7185',
-  redSoftBg: 'rgba(251,113,133,',
-};
+// Los colores viven en src/styles/themes.css (una paleta por tema). Acá se leen del tema activo
+// para los gráficos de Chart.js, que no entiende variables CSS.
+export const C = {};
+export const COLORS = [];
 
-export const COLORS = [
-  '#a78bfa','#f472b6','#2dd4bf','#818cf8','#e879f9','#60a5fa',
-  '#c4b5fd','#fb7185','#7c5cf0','#34d399','#fbbf24','#d946ef'
-];
+const triple = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/\s+/g, ',');
+
+/** Vuelve a leer la paleta del tema activo (llamar después de cambiar data-theme). */
+export function syncTheme() {
+  if (typeof document === 'undefined') return;
+  const rgb = {};
+  ['bg', 'ink', 'ink-dim', 'ink-faint', 'line-soft', 'accent', 'pos', 'neg', 'gold', 'indigo', 'orange'].forEach((n) => { rgb[n.replace(/-(\w)/g, (_, c) => c.toUpperCase())] = triple('--c-' + n); });
+  const c = (n) => `rgb(${rgb[n]})`;
+  Object.assign(C, {
+    ink: c('ink'), inkDim: c('inkDim'), inkFaint: c('inkFaint'), grid: c('lineSoft'), bg: c('bg'),
+    purple: c('accent'), purpleSoftBg: `rgba(${rgb.accent},.12)`,
+    green: c('pos'), greenSoftBg: `rgba(${rgb.pos},`,
+    red: c('neg'), redSoftBg: `rgba(${rgb.neg},`,
+    gold: c('gold'), indigo: c('indigo'), orange: c('orange'),
+    rgb,
+  });
+  COLORS.length = 0;
+  for (let i = 1; i <= 12; i++) COLORS.push(`rgb(${triple('--cat-' + i)})`);
+}
+
+/** rgba(<color del tema>, alpha) — p. ej. A('accent', .5). */
+export const A = (name, alpha) => `rgba(${C.rgb[name]},${alpha})`;
+
+syncTheme();
 
 export const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
@@ -23,6 +34,7 @@ export let RAW = { gastos: [], ingresos: [], transferencias: [] };
 export let FILTERED = { gastos: [], ingresos: [] };
 export let FILTERS = { year: 'all', month: 'all', period: 'all', account: 'all', category: 'all', minAmount: 0 };
 export let CHARTS = {};
+export let METRICS = null;
 export let CAT_SEARCH = '';
 export const OPEN_CATS = new Set();
 export const SKIP_CATS = new Set(['']);
@@ -33,6 +45,7 @@ export let EXCLUDED_ACCOUNTS = new Set();
 
 export function setRaw(data) { RAW = data; }
 export function setFiltered(data) { FILTERED = data; }
+export function setMetrics(m) { METRICS = m; }
 export function setFilters(data) { FILTERS = data; }
 export function setCatSearch(v) { CAT_SEARCH = v; }
 export function setExcludedGasCats(s) { EXCLUDED_GAS_CATS = s; }

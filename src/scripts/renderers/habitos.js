@@ -1,23 +1,21 @@
-import { FILTERED, C, COLORS, DAY_NAMES } from '../state.js';
-import { fmt, fmtFull, mkChart, axX, axY, tooltipARS, legendStyle, groupBy, sortedEntries } from '../helpers.js';
+import { FILTERED, METRICS, C, COLORS, DAY_NAMES, A } from '../state.js';
+import { fmt, fmtFull, esc, mkChart, axX, axY, tooltipARS, legendStyle, chartOpts, monthLabel, sortedEntries } from '../helpers.js';
 
 const day = (f) => new Date(f + 'T12:00:00');
 
 export function renderHabitos() {
   const g = FILTERED.gastos;
-  const total = g.reduce((a, r) => a + r.monto, 0);
+  const { tG: total, byDateG: byDate } = METRICS;
   const dates = [...new Set(g.map((r) => r.fecha).filter(Boolean))].sort();
   const span = dates.length ? Math.max(1, Math.round((day(dates.at(-1)) - day(dates[0])) / 864e5) + 1) : 1;
 
   const dow = Array(7).fill(0), dowN = Array(7).fill(0), dom = Array(31).fill(0);
-  const byDate = {};
   g.forEach((r) => {
     if (!r.fecha) return;
     const d = day(r.fecha);
     dow[d.getDay()] += r.monto;
     dowN[d.getDay()]++;
     dom[d.getDate() - 1] += r.monto;
-    byDate[r.fecha] = (byDate[r.fecha] || 0) + r.monto;
   });
   const worst = sortedEntries(byDate)[0];
   const topDow = dow.indexOf(Math.max(...dow));
@@ -43,17 +41,17 @@ export function renderHabitos() {
     options: { responsive: true, plugins: { legend: { display: false }, tooltip: tooltipARS }, scales: { x: axX, y: axY() } }
   });
 
-  const months = [...new Set(g.map((r) => r.fecha?.slice(0, 7)).filter(Boolean))].sort().slice(-12);
-  const top = sortedEntries(groupBy(g, 'cat')).slice(0, 6).map((e) => e[0]);
+  const months = METRICS.gMonths.slice(-12);
+  const top = sortedEntries(METRICS.byCatG).slice(0, 6).map((e) => e[0]);
   const series = top.map((c, k) => ({
     label: c,
     backgroundColor: COLORS[k],
-    data: months.map((m) => g.filter((r) => r.cat === c && r.fecha.startsWith(m)).reduce((a, r) => a + r.monto, 0))
+    data: months.map((m) => METRICS.catMonthG[c]?.[m] || 0)
   }));
   mkChart('chartCatMes', {
     type: 'bar',
-    data: { labels: months.map((m) => m.slice(5) + '/' + m.slice(2, 4)), datasets: series },
-    options: { responsive: true, plugins: { legend: legendStyle, tooltip: tooltipARS }, scales: { x: { ...axX, stacked: true }, y: { ...axY(), stacked: true } } }
+    data: { labels: months.map(monthLabel), datasets: series },
+    options: chartOpts({ legend: true, x: { ...axX, stacked: true }, y: { ...axY(), stacked: true } })
   });
 
   const edges = [5000, 10000, 20000, 50000, 100000, Infinity];
@@ -80,35 +78,31 @@ export function renderHabitos() {
   });
   const rows = Object.entries(com).filter(([, v]) => v.n > 1).sort((a, b) => b[1].t - a[1].t).slice(0, 10);
   document.getElementById('habTopComercios').innerHTML = rows.length
-    ? rows.map(([k, v]) => `<div class="receipt-row"><span class="receipt-name">${k}</span><span class="receipt-meta">${v.n}x · ${fmt(v.t / v.n)}</span><span class="receipt-amt">${fmt(v.t)}</span></div>`).join('')
+    ? rows.map(([k, v]) => `<div class="receipt-row"><span class="receipt-name">${esc(k)}</span><span class="receipt-meta">${v.n}x · ${fmt(v.t / v.n)}</span><span class="receipt-amt">${fmt(v.t)}</span></div>`).join('')
     : '<div class="empty-state">Sin repeticiones en el período.</div>';
 }
 
 export function renderResumenExtra() {
-  const g = FILTERED.gastos, i = FILTERED.ingresos;
-  const months = [...new Set([...g, ...i].map((r) => r.fecha?.slice(0, 7)).filter(Boolean))].sort();
-  const sum = (arr, m) => arr.filter((r) => r.fecha.startsWith(m)).reduce((a, r) => a + r.monto, 0);
-  const labels = months.map((m) => m.slice(5) + '/' + m.slice(2, 4));
+  const { months, monG, monI, byDateG: by, catMonthG, gMonths: ms } = METRICS;
+  const labels = months.map(monthLabel);
   let acc = 0;
-  const bal = months.map((m) => (acc += sum(i, m) - sum(g, m)));
-  const tasa = months.map((m) => { const ing = sum(i, m); return ing ? Math.round(((ing - sum(g, m)) / ing) * 100) : null; });
+  const bal = months.map((m) => (acc += (monI[m] || 0) - (monG[m] || 0)));
+  const tasa = months.map((m) => { const ing = monI[m] || 0; return ing ? Math.round(((ing - (monG[m] || 0)) / ing) * 100) : null; });
 
   mkChart('chartBalance', {
     type: 'line',
-    data: { labels, datasets: [{ data: bal, borderColor: C.purple, backgroundColor: 'rgba(167,139,250,.18)', fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2 }] },
+    data: { labels, datasets: [{ data: bal, borderColor: C.purple, backgroundColor: A('accent', .18), fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2 }] },
     options: { responsive: true, plugins: { legend: { display: false }, tooltip: tooltipARS }, scales: { x: axX, y: axY() } }
   });
 
   mkChart('chartTasa', {
     type: 'bar',
-    data: { labels, datasets: [{ data: tasa, backgroundColor: tasa.map((v) => (v >= 0 ? 'rgba(167,139,250,.55)' : 'rgba(251,113,133,.6)')), borderColor: tasa.map((v) => (v >= 0 ? C.purple : C.red)), borderWidth: 1 }] },
+    data: { labels, datasets: [{ data: tasa, backgroundColor: tasa.map((v) => (v >= 0 ? A('accent', .55) : A('neg', .6))), borderColor: tasa.map((v) => (v >= 0 ? C.purple : C.red)), borderWidth: 1 }] },
     options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.raw + '%' } } }, scales: { x: axX, y: axY((v) => v + '%') } }
   });
 
   const cal = document.getElementById('calGasto');
   if (cal) {
-    const by = {};
-    g.forEach((r) => { if (r.fecha) by[r.fecha] = (by[r.fecha] || 0) + r.monto; });
     const dates = Object.keys(by).sort();
     cal.innerHTML = '';
     if (dates.length) {
@@ -124,25 +118,23 @@ export function renderResumenExtra() {
         const a = v ? (0.18 + Math.min(v / cap, 1) * 0.82).toFixed(2) : 0;
         const cell = document.createElement('div');
         cell.className = 'cal-cell';
-        cell.style.background = v ? `rgba(167,139,250,${a})` : 'rgba(167,139,250,.07)';
+        cell.style.background = v ? `rgba(${C.rgb.accent},${a})` : A('accent', .07);
         cell.title = `${k}: ${v ? fmtFull(v) : 'sin gasto'}`;
         cal.appendChild(cell);
       }
     }
   }
 
-  const ms = [...new Set(g.map((r) => r.fecha?.slice(0, 7)).filter(Boolean))].sort();
   const [cur, prev] = [ms.at(-1), ms.at(-2)];
   if (cur && prev) {
-    const a = groupBy(g.filter((r) => r.fecha.startsWith(cur)), 'cat');
-    const b = groupBy(g.filter((r) => r.fecha.startsWith(prev)), 'cat');
-    const rows = [...new Set([...Object.keys(a), ...Object.keys(b)])]
-      .map((k) => [k, (a[k] || 0) - (b[k] || 0)])
+    const rows = Object.keys(catMonthG)
+      .map((k) => [k, (catMonthG[k][cur] || 0) - (catMonthG[k][prev] || 0)])
+      .filter((r) => r[1] !== 0)
       .sort((x, y) => Math.abs(y[1]) - Math.abs(x[1]))
       .slice(0, 10);
     mkChart('chartVar', {
       type: 'bar',
-      data: { labels: rows.map((r) => r[0]), datasets: [{ data: rows.map((r) => r[1]), backgroundColor: rows.map((r) => (r[1] > 0 ? 'rgba(251,113,133,.6)' : 'rgba(167,139,250,.6)')), borderColor: rows.map((r) => (r[1] > 0 ? C.red : C.purple)), borderWidth: 1 }] },
+      data: { labels: rows.map((r) => r[0]), datasets: [{ data: rows.map((r) => r[1]), backgroundColor: rows.map((r) => (r[1] > 0 ? A('neg', .6) : A('accent', .6))), borderColor: rows.map((r) => (r[1] > 0 ? C.red : C.purple)), borderWidth: 1 }] },
       options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => (c.raw > 0 ? '+' : '') + fmtFull(c.raw) } } }, scales: { x: axY(), y: { ...axX, ticks: { ...axX.ticks, maxRotation: 0, font: { size: 10, family: 'JetBrains Mono' } } } } }
     });
   }

@@ -63,7 +63,12 @@ function build() {
     if (day === 3) add(f, 'Casa', 'Banco C', 140000 * k, 'Alquiler');
     if (day === 5) add(f, 'Salud', 'Tarjeta B', 18000 * k, 'Gimnasio');
     if (day === 8) add(f, 'Casa', 'Tarjeta B', 14000 * k, 'Internet hogar');
-    if (day === 10 && monthIdx >= 4) add(f, 'Ahorro dólares', 'Banco C', (60000 + r() * 60000) * k, 'Compra divisa MEP');
+    if (day === 10 && monthIdx >= 4) {
+      const ars = round((60000 + r() * 60000) * k);
+      add(f, 'Ahorro dólares', 'Banco C', ars, 'Compra divisa MEP');
+      const rate = 900 * Math.pow(1.012, monthIdx);
+      transferencias.push({ fecha: f, cuentaOrigen: 'Banco C', cuentaDestino: 'Cuenta USD', monto: ars, montoSaliente: ars, montoEntrante: Math.round((ars / rate) * 100) / 100, monedaSaliente: 'ARS', monedaEntrante: 'USD', comentario: 'Compra divisa MEP' });
+    }
     if (day === 20) add(f, 'Suscripciones', 'Tarjeta B', 9000 * k, 'Plataforma video 1');
     if (day === 22) add(f, 'Suscripciones', 'Tarjeta B', 5200 * k, 'Plataforma música');
     if (day === 25) add(f, 'Casa', 'Tarjeta B', 22000 * k, 'Impuesto mensual');

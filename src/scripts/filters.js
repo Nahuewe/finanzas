@@ -1,7 +1,10 @@
 import {
   RAW, FILTERS, SKIP_CATS, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS, EXCLUDED_ACCOUNTS,
-  setFiltered, setFilters, OPEN_CATS,
+  setFiltered, setMetrics, setFilters, setExcludedAccounts, OPEN_CATS,
 } from './state.js';
+import { buildMetrics } from './metrics.js';
+import { matcher } from './config.js';
+import { esc } from './helpers.js';
 import { renderAll } from './renderers/index.js';
 import { buildExcludePanel } from './renderers/excludePanel.js';
 
@@ -55,6 +58,7 @@ export function applyFilters() {
   }
 
   setFiltered({ gastos: gasto, ingresos: ingreso });
+  setMetrics(buildMetrics(gasto, ingreso));
 
   const all = [...gasto, ...ingreso].map((r) => r.fecha).filter(Boolean).sort();
   document.getElementById('dateRangeLabel').textContent =
@@ -62,6 +66,14 @@ export function applyFilters() {
 
   OPEN_CATS.clear();
   renderAll();
+}
+
+/** Recalcula qué cuentas se excluyen (reservas) según la configuración y reconstruye el panel. */
+export function refreshExclusions() {
+  const isReserva = matcher('cuentasReserva');
+  const accs = new Set([...RAW.gastos, ...RAW.ingresos].map((r) => r.cuenta).filter(Boolean));
+  setExcludedAccounts(new Set([...accs].filter(isReserva)));
+  buildExcludePanel();
 }
 
 export function resetFilters() {
@@ -84,21 +96,21 @@ export function buildFilterOptions() {
   ].sort();
   const sel = document.getElementById('filterYear');
   sel.innerHTML = '<option value="all">Todos</option>';
-  years.forEach((y) => sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`));
+  years.forEach((y) => sel.insertAdjacentHTML('beforeend', `<option value="${esc(y)}">${esc(y)}</option>`));
 
   const accounts = [
     ...new Set(RAW.gastos.concat(RAW.ingresos).map((r) => r.cuenta).filter(Boolean))
   ].sort();
   const acSel = document.getElementById('filterAccount');
   acSel.innerHTML = '<option value="all">Todas</option>';
-  accounts.forEach((a) => acSel.insertAdjacentHTML('beforeend', `<option value="${a}">${a}</option>`));
+  accounts.forEach((a) => acSel.insertAdjacentHTML('beforeend', `<option value="${esc(a)}">${esc(a)}</option>`));
 
   const cats = [
     ...new Set(RAW.gastos.filter((r) => !SKIP_CATS.has(r.cat)).map((r) => r.cat).filter(Boolean))
   ].sort();
   const catSel = document.getElementById('filterCategory');
   catSel.innerHTML = '<option value="all">Todas</option>';
-  cats.forEach((c) => catSel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+  cats.forEach((c) => catSel.insertAdjacentHTML('beforeend', `<option value="${esc(c)}">${esc(c)}</option>`));
 
   buildMonthOptions();
   buildExcludePanel();

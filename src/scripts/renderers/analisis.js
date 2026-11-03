@@ -1,79 +1,50 @@
-import { FILTERED, RAW, EXCLUDED_ACCOUNTS, C, COLORS } from '../state.js';
-import { fmt, fmtFull, groupBy, groupByMon, allMonths, sortedEntries, mkChart, axX, axY, tooltipARS, legendStyle } from '../helpers.js';
+import { FILTERED, RAW, METRICS, EXCLUDED_ACCOUNTS, C, COLORS, A } from '../state.js';
+import { fmt, fmtFull, esc, sum, avg, sortedEntries, mkChart, axX, axY, legendStyle, chartOpts, monthLabel } from '../helpers.js';
+import { store } from '../storage.js';
+import { matcher } from '../config.js';
+import { INFL, inflOf, lastInflation } from '../externalData.js';
 
-const LS_INFL = 'finanzas_inflacion_v1';
-const SAVING_RE = /ahorro|inversi/i;
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sum = (arr) => arr.reduce((a, r) => a + r.monto, 0);
-const label = (m) => m.slice(5) + '/' + m.slice(2, 4);
-const INFL_API = 'https://api.argentinadatos.com/v1/finanzas/indices/inflacion';
-const LS_INFL_CACHE = 'finanzas_inflacion_api_v1';
-const CACHE_MS = 12 * 3600 * 1000;
-let INFL_DATA = {};      // { 'YYYY-MM': % mensual } (INDEC vía argentinadatos.com)
-let INFL_STATE = 'cargando'; // cargando | ok | error
-
-async function loadInflation() {
-  try {
-    const c = JSON.parse(localStorage.getItem(LS_INFL_CACHE) || 'null');
-    if (c && Date.now() - c.t < CACHE_MS) { INFL_DATA = c.data; INFL_STATE = 'ok'; return; }
-  } catch { /* sin cache */ }
-  try {
-    const res = await fetch(INFL_API);
-    if (!res.ok) throw new Error(res.status);
-    const data = {};
-    (await res.json()).forEach((r) => { if (r.fecha >= '2015' && typeof r.valor === 'number') data[r.fecha.slice(0, 7)] = r.valor; });
-    INFL_DATA = data;
-    INFL_STATE = 'ok';
-    try { localStorage.setItem(LS_INFL_CACHE, JSON.stringify({ t: Date.now(), data })); } catch { /* storage bloqueado */ }
-  } catch {
-    try { const c = JSON.parse(localStorage.getItem(LS_INFL_CACHE) || 'null'); if (c) { INFL_DATA = c.data; INFL_STATE = 'ok'; return; } } catch { /* nada */ }
-    INFL_STATE = 'error';
-  }
-}
-
-const getInfl = () => { try { return +localStorage.getItem(LS_INFL) || 0; } catch { return 0; } };
+const getManual = () => +store.get('inflacionManual', 0) || 0;
 
 export function renderAnalisis() {
   const g = FILTERED.gastos, i = FILTERED.ingresos;
-  const months = allMonths(g, i);
+  const { months, monG, monI, tG, tI, byCatG } = METRICS;
   const kpi = document.getElementById('kpiAnalisis');
   if (months.length < 2) {
     kpi.innerHTML = '<div class="empty-state">Necesitás al menos 2 meses de datos para este análisis.</div>';
     return;
   }
-  const monG = groupByMon(g), monI = groupByMon(i);
-  const gSave = g.filter((r) => SAVING_RE.test(r.cat));
-  const monS = groupByMon(gSave);
-  const labels = months.map(label);
+  const isSave = matcher('ahorro');
+  const gSave = g.filter((r) => isSave(r.cat));
+  const monS = {};
+  gSave.forEach((r) => { const m = r.fecha?.slice(0, 7); if (m) monS[m] = (monS[m] || 0) + r.monto; });
+  const labels = months.map(monthLabel);
 
   // ── KPIs: ahorro real incluyendo lo que se destina a dólares/inversiones ──
-  const tI = sum(i), tG = sum(g), tS = sum(gSave);
+  const tS = sum(gSave);
   const rawRate = tI ? (tI - tG) / tI * 100 : 0;
   const realRate = tI ? (tI - tG + tS) / tI * 100 : 0;
   const cons = g.length - gSave.length ? tG - tS : tG;
 
   // ── Inflación ──
-  // mes a mes con datos reales; meses sin publicar (el último) usan el último dato conocido o el valor manual
-  const manual = getInfl();
-  const known = Object.keys(INFL_DATA).sort();
-  const fallback = manual || (known.length ? INFL_DATA[known.at(-1)] : 0);
-  const inflOf = (m) => (INFL_DATA[m] !== undefined ? INFL_DATA[m] : fallback);
+  // mes a mes con datos reales; los meses sin publicar usan el valor manual o el último dato conocido
+  const manual = getManual();
+  const known = Object.keys(INFL.data).sort();
   const inflInput = document.getElementById('inflInput');
   if (inflInput && document.activeElement !== inflInput) inflInput.value = manual || '';
   const factors = months.map(() => 1);
-  for (let k = months.length - 2; k >= 0; k--) factors[k] = factors[k + 1] * (1 + inflOf(months[k + 1]) / 100);
+  for (let k = months.length - 2; k >= 0; k--) factors[k] = factors[k + 1] * (1 + inflOf(months[k + 1], manual) / 100);
   const realG = months.map((m, k) => (monG[m] || 0) * factors[k]);
-  const infl = INFL_STATE === 'ok' || manual ? (Math.pow(factors[0], 1 / Math.max(1, months.length - 1)) - 1) * 100 : 0;
+  const infl = INFL.state === 'ok' || manual ? (Math.pow(factors[0], 1 / Math.max(1, months.length - 1)) - 1) * 100 : 0;
   const stEl = document.getElementById('inflStatus');
   if (stEl) {
-    const last = known.at(-1);
-    stEl.textContent = INFL_STATE === 'ok' ? `INDEC (argentinadatos.com) · último dato ${last}: ${INFL_DATA[last]}%`
-      : INFL_STATE === 'cargando' ? 'Cargando inflación…' : 'No se pudo consultar la API; usando el valor manual';
+    const last = lastInflation();
+    stEl.textContent = INFL.state === 'ok' && last ? `INDEC (argentinadatos.com) · último dato ${last.ym}: ${last.valor}%`
+      : INFL.state === 'cargando' ? 'Cargando inflación…' : 'No se pudo consultar la API; usando el valor manual';
   }
   const half = Math.max(1, Math.floor(months.length / 2));
-  const avg = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
   const nomChange = (avg(months.slice(-half).map((m) => monG[m] || 0)) / (avg(months.slice(0, half).map((m) => monG[m] || 0)) || 1) - 1) * 100;
   const realChange = (avg(realG.slice(-half)) / (avg(realG.slice(0, half)) || 1) - 1) * 100;
 
@@ -91,9 +62,9 @@ export function renderAnalisis() {
     type: 'line',
     data: { labels, datasets: [
       { label: 'Contable', data: months.map((m) => rate(m, false)), borderColor: C.inkFaint, borderDash: [4, 4], borderWidth: 2, pointRadius: 0, tension: 0.25 },
-      { label: 'Real (con ahorro/dólares)', data: months.map((m) => rate(m, true)), borderColor: C.green, backgroundColor: 'rgba(74,222,128,.12)', fill: true, borderWidth: 2, pointRadius: 0, tension: 0.25 }
+      { label: 'Real (con ahorro/dólares)', data: months.map((m) => rate(m, true)), borderColor: C.green, backgroundColor: A('pos', .12), fill: true, borderWidth: 2, pointRadius: 0, tension: 0.25 }
     ] },
-    options: { responsive: true, plugins: { legend: legendStyle, tooltip: { callbacks: { label: (c) => c.dataset.label + ': ' + c.raw + '%' } } }, scales: { x: axX, y: axY((v) => v + '%') } }
+    options: chartOpts({ legend: true, tooltip: { callbacks: { label: (c) => c.dataset.label + ': ' + c.raw + '%' } }, y: axY((v) => v + '%') })
   });
 
   // ── Gasto nominal vs real ──
@@ -101,9 +72,9 @@ export function renderAnalisis() {
     type: 'line',
     data: { labels, datasets: [
       { label: 'Nominal', data: months.map((m) => monG[m] || 0), borderColor: C.red, borderWidth: 2, pointRadius: 0, tension: 0.25 },
-      { label: `Real (pesos de ${label(months.at(-1))})`, data: realG, borderColor: C.purple, backgroundColor: C.purpleSoftBg, fill: true, borderWidth: 2, pointRadius: 0, tension: 0.25 }
+      { label: `Real (pesos de ${monthLabel(months.at(-1))})`, data: realG, borderColor: C.purple, backgroundColor: C.purpleSoftBg, fill: true, borderWidth: 2, pointRadius: 0, tension: 0.25 }
     ] },
-    options: { responsive: true, plugins: { legend: legendStyle, tooltip: tooltipARS }, scales: { x: axX, y: axY() } }
+    options: chartOpts({ legend: true })
   });
 
   // ── Año contra año ──
@@ -114,11 +85,11 @@ export function renderAnalisis() {
       label: y, data: MONTH_NAMES.map((_, mi) => { const v = monG[`${y}-${String(mi + 1).padStart(2, '0')}`]; return v === undefined ? null : v; }),
       borderColor: COLORS[k % COLORS.length], backgroundColor: COLORS[k % COLORS.length], borderWidth: 2, pointRadius: 2, tension: 0.25, spanGaps: false
     })) },
-    options: { responsive: true, plugins: { legend: legendStyle, tooltip: tooltipARS }, scales: { x: axX, y: axY() } }
+    options: chartOpts({ legend: true })
   });
 
   // ── Pareto ──
-  const cats = sortedEntries(groupBy(g, 'cat'));
+  const cats = sortedEntries(byCatG);
   let acc = 0;
   const cum = cats.map(([, v]) => Math.round((acc += v) / (tG || 1) * 100));
   const n80 = cum.findIndex((v) => v >= 80) + 1;
@@ -136,13 +107,15 @@ export function renderAnalisis() {
 
   // ── Gasto por cuenta (apilado) ──
   const accounts = [...new Set(g.map((r) => r.cuenta).filter(Boolean))].sort();
+  const accMonth = {};
+  g.forEach((r) => { const k = r.cuenta + '|' + r.fecha?.slice(0, 7); accMonth[k] = (accMonth[k] || 0) + r.monto; });
   mkChart('chartCuentaMes', {
     type: 'bar',
     data: { labels, datasets: accounts.map((a, k) => ({
       label: a, backgroundColor: COLORS[k % COLORS.length],
-      data: months.map((m) => sum(g.filter((r) => r.cuenta === a && r.fecha.startsWith(m))))
+      data: months.map((m) => accMonth[a + '|' + m] || 0)
     })) },
-    options: { responsive: true, plugins: { legend: legendStyle, tooltip: tooltipARS }, scales: { x: { ...axX, stacked: true }, y: { ...axY(), stacked: true } } }
+    options: chartOpts({ legend: true, x: { ...axX, stacked: true }, y: { ...axY(), stacked: true } })
   });
 
   // ── Anomalías ──
@@ -179,10 +152,9 @@ export function renderAnalisis() {
 }
 
 export function initAnalisisListeners() {
-  loadInflation().then(() => { if (document.getElementById('kpiAnalisis')?.children.length) renderAnalisis(); });
   document.getElementById('inflInput')?.addEventListener('change', (e) => {
-    try { localStorage.setItem(LS_INFL, String(Math.max(0, +e.target.value || 0))); } catch { /* storage bloqueado */ }
-    renderAnalisis();
+    store.set('inflacionManual', Math.max(0, +e.target.value || 0));
+    document.dispatchEvent(new CustomEvent('external-data'));
   });
 }
 

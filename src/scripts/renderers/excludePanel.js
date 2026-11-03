@@ -1,5 +1,6 @@
 import { RAW, EXCLUDED_GAS_CATS, EXCLUDED_ING_CATS, EXCLUDED_ACCOUNTS, SKIP_CATS, setExcludedGasCats, setExcludedIngCats, setExcludedAccounts } from '../state.js';
 import { applyFilters } from '../filters.js';
+import { esc } from '../helpers.js';
 
 export function buildExcludePanel() {
   const gasCats = [...new Set(RAW.gastos.filter((r) => !SKIP_CATS.has(r.cat)).map((r) => r.cat).filter(Boolean))].sort();
@@ -15,9 +16,9 @@ export function buildExcludePanel() {
       <div class="exclude-label">EXCLUIR GASTOS</div>
       <div class="exclude-chips" id="excludeGasChips">
         ${gasCats.map((cat) => `
-          <label class="exclude-chip ${EXCLUDED_GAS_CATS.has(cat) ? 'excluded' : ''}" data-cat="${cat}" data-type="gas">
+          <label class="exclude-chip ${EXCLUDED_GAS_CATS.has(cat) ? 'excluded' : ''}" data-cat="${esc(cat)}" data-type="gas">
             <input type="checkbox" ${EXCLUDED_GAS_CATS.has(cat) ? '' : 'checked'} />
-            <span>${cat}</span>
+            <span>${esc(cat)}</span>
           </label>
         `).join('')}
       </div>
@@ -26,9 +27,9 @@ export function buildExcludePanel() {
       <div class="exclude-label">EXCLUIR INGRESOS</div>
       <div class="exclude-chips" id="excludeIngChips">
         ${ingCats.map((cat) => `
-          <label class="exclude-chip ${EXCLUDED_ING_CATS.has(cat) ? 'excluded' : ''}" data-cat="${cat}" data-type="ing">
+          <label class="exclude-chip ${EXCLUDED_ING_CATS.has(cat) ? 'excluded' : ''}" data-cat="${esc(cat)}" data-type="ing">
             <input type="checkbox" ${EXCLUDED_ING_CATS.has(cat) ? '' : 'checked'} />
-            <span>${cat}</span>
+            <span>${esc(cat)}</span>
           </label>
         `).join('')}
       </div>
@@ -37,9 +38,9 @@ export function buildExcludePanel() {
       <div class="exclude-label">EXCLUIR CUENTAS</div>
       <div class="exclude-chips">
         ${accounts.map((cat) => `
-          <label class="exclude-chip ${EXCLUDED_ACCOUNTS.has(cat) ? 'excluded' : ''}" data-cat="${cat}" data-type="acc">
+          <label class="exclude-chip ${EXCLUDED_ACCOUNTS.has(cat) ? 'excluded' : ''}" data-cat="${esc(cat)}" data-type="acc">
             <input type="checkbox" ${EXCLUDED_ACCOUNTS.has(cat) ? '' : 'checked'} />
-            <span>${cat}</span>
+            <span>${esc(cat)}</span>
           </label>
         `).join('')}
       </div>

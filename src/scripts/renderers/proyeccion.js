@@ -1,5 +1,5 @@
-import { FILTERED, C } from '../state.js';
-import { fmt, fmtFull, groupByMon, allMonths, mkChart, axX, axY, tooltipARS, legendStyle } from '../helpers.js';
+import { METRICS, C, A } from '../state.js';
+import { fmt, fmtFull, mkChart, axX, axY, tooltipARS, legendStyle } from '../helpers.js';
 
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MONTH_FULL  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -23,8 +23,7 @@ function nextMonths(fromYM, count) {
 }
 
 export function renderProyeccion() {
-  const g = FILTERED.gastos, i = FILTERED.ingresos;
-  const months = allMonths(g, i);
+  const { months, monG, monI } = METRICS;
 
   const kpiEl    = document.getElementById('kpiProyeccion');
   const tablaEl  = document.getElementById('proyeccionTabla');
@@ -35,8 +34,6 @@ export function renderProyeccion() {
     return;
   }
 
-  const monG = groupByMon(g);
-  const monI = groupByMon(i);
 
   const WIN = Math.min(months.length, 6);
   const recent = months.slice(-WIN);
@@ -77,8 +74,8 @@ export function renderProyeccion() {
     data: {
       labels: allLabels,
       datasets: [
-        { label: 'Ingresos reales', data: [...months.map((m) => monI[m] || 0), ...nullP], backgroundColor: 'rgba(74,222,128,.2)', borderColor: C.green, borderWidth: 1.5, borderRadius: 2, order: 2 },
-        { label: 'Gastos reales',   data: [...months.map((m) => monG[m] || 0), ...nullP], backgroundColor: 'rgba(251,113,133,.2)', borderColor: C.red,   borderWidth: 1.5, borderRadius: 2, order: 2 },
+        { label: 'Ingresos reales', data: [...months.map((m) => monI[m] || 0), ...nullP], backgroundColor: A('pos', .2), borderColor: C.green, borderWidth: 1.5, borderRadius: 2, order: 2 },
+        { label: 'Gastos reales',   data: [...months.map((m) => monG[m] || 0), ...nullP], backgroundColor: A('neg', .2), borderColor: C.red,   borderWidth: 1.5, borderRadius: 2, order: 2 },
         { label: 'Ingresos proy.',  data: [...nullH.slice(0, -1), lastI, ...projI], type: 'line', borderColor: C.green, borderDash: [5,4], borderWidth: 2, pointRadius: (ctx) => ctx.dataIndex >= months.length - 1 ? 3 : 0, pointBackgroundColor: C.green, backgroundColor: 'transparent', tension: 0.3, order: 1 },
         { label: 'Gastos proy.',    data: [...nullH.slice(0, -1), lastG, ...projG], type: 'line', borderColor: C.red,   borderDash: [5,4], borderWidth: 2, pointRadius: (ctx) => ctx.dataIndex >= months.length - 1 ? 3 : 0, pointBackgroundColor: C.red,   backgroundColor: 'transparent', tension: 0.3, order: 1 },
       ],
@@ -108,7 +105,7 @@ export function renderProyeccion() {
       plugins: { legend: { display: false }, tooltip: tooltipARS },
       scales: {
         x: axX,
-        y: { ticks: { color: '#8b81b0', callback: (v) => (v >= 0 ? '+' : '') + fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: '#221c3b' } },
+        y: { ticks: { color: C.inkFaint, callback: (v) => (v >= 0 ? '+' : '') + fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: C.grid } },
       },
     },
   });

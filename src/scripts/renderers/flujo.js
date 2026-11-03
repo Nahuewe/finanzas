@@ -1,10 +1,8 @@
-import { FILTERED, C } from '../state.js';
-import { fmt, fmtFull, groupByMon, allMonths, mkChart, axX, axY } from '../helpers.js';
+import { METRICS, C } from '../state.js';
+import { fmt, fmtFull, mkChart, axX, axY, monthLabel } from '../helpers.js';
 
 export function renderFlujo() {
-  const g = FILTERED.gastos, i = FILTERED.ingresos;
-  const months = allMonths(g, i);
-  const monG = groupByMon(g), monI = groupByMon(i);
+  const { months, monG, monI, tG, tI } = METRICS;
   const netos = months.map((m) => (monI[m] || 0) - (monG[m] || 0));
   const positivos = netos.filter((v) => v >= 0).length;
   const negativos = netos.filter((v) => v < 0).length;
@@ -12,8 +10,6 @@ export function renderFlujo() {
   const worst = months.length ? Math.min(...netos) : 0;
   const bestM  = months[netos.indexOf(best)];
   const worstM = months[netos.indexOf(worst)];
-  const tG = g.reduce((a, r) => a + r.monto, 0);
-  const tI = i.reduce((a, r) => a + r.monto, 0);
 
   document.getElementById('kpiFlujo').innerHTML = `
     <div class="kpi green"><div class="label">Meses Positivos</div><div class="value">${positivos}</div><div class="sub">de ${months.length}</div></div>
@@ -26,7 +22,7 @@ export function renderFlujo() {
   mkChart('chartFlujo', {
     type: 'bar',
     data: {
-      labels: months.map((m) => m.slice(5) + '/' + m.slice(2, 4)),
+      labels: months.map(monthLabel),
       datasets: [{
         data: netos,
         backgroundColor: netos.map((v) => v >= 0 ? C.greenSoftBg + '.5)' : C.redSoftBg + '.5)'),

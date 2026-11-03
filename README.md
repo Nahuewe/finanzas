@@ -7,10 +7,15 @@ Todo el procesamiento ocurre **en el navegador** — el archivo nunca se sube a 
 ## ✨ Funcionalidades
 
 - **Carga dinámica de Excel** (drag & drop o selector de archivo) con 3 hojas: `Gastos`, `Ingresos`, `Transferencias`.
-- **Filtros en tiempo real**: por año, período (3/6 meses/todo) y cuenta.
-- **5 vistas**: Resumen, Gastos, Ingresos, Flujo neto y Ahorros.
-- **Gastos**: ranking de categorías en formato acordeón (con sparkline mensual y top de conceptos por categoría), comparativa mes a mes, lista de suscripciones detectadas y top 10 de gastos individuales.
-- **Ahorros**: alertas y oportunidades de ahorro calculadas dinámicamente (gasto hormiga, suscripciones duplicadas, compras impulsivas, tasa de ahorro, meses en negativo, etc.) — no son textos fijos, se recalculan según el archivo y los filtros activos.
+- **Filtros en tiempo real**: año, mes, período (3/6 meses/todo), cuenta, categoría y monto mínimo. Se pueden excluir categorías y cuentas (las cuentas "Reserva" se excluyen por defecto del flujo de gastos/ingresos).
+- **Vistas**: Resumen, Gastos, Ingresos, Flujo, Proyección, Ahorros, Presupuesto, Análisis, Patrimonio, Hábitos, Comentarios y Cuentas.
+- **Gastos**: ranking de categorías en acordeón, comparativa mes a mes, suscripciones, top 10, gastos recurrentes y **alertas de suscripciones que subieron más que la inflación**.
+- **Presupuesto**: topes mensuales por categoría con avance y proyección al cierre, gastos fijos vs variables y meses de colchón.
+- **Análisis**: ahorro real vs contable, gasto nominal vs real (inflación INDEC mes a mes), año contra año, Pareto, anomalías y transferencias entre cuentas.
+- **Patrimonio**: evolución del saldo por cuenta (reconstruido desde el saldo actual) y panel de **dólares** (compras, precio promedio vs mercado, resultado nominal y real).
+- **Ahorros**: alertas y oportunidades calculadas dinámicamente; las reglas (qué categorías son hormiga, suscripciones, ahorro, etc.) son **configurables** desde la misma pestaña.
+- **Informe mensual imprimible** (botón 🖨 Informe → guardar como PDF) y **exportación CSV** de los datos filtrados.
+- **Datos públicos** (API argentinadatos.com): inflación mensual y cotización del dólar (MEP/Blue/Oficial), con caché de 12 h.
 - **100% responsive**, pensado mobile-first.
 - Modo demo incluido para probar sin subir un archivo propio.
 
@@ -64,18 +69,29 @@ Ya incluye un workflow listo en `.github/workflows/deploy.yml` usando la acción
 - [SheetJS / xlsx](https://sheetjs.com) — parseo del Excel en el cliente (vía CDN).
 - CSS plano con variables — sin frameworks de estilos.
 
+## 🔒 Privacidad
+
+El Excel nunca sale del navegador. Lo único que se consulta afuera son datos públicos (inflación y dólar). Saldos, topes y reglas se guardan solo en `localStorage` de tu navegador.
+
 ## 📁 Estructura
 
 ```
 src/
-├── layouts/
-│   └── Layout.astro       # head, fuentes, import de estilos globales
-├── pages/
-│   └── index.astro        # markup de la app (upload screen + dashboard)
+├── layouts/Layout.astro        # head, fuentes, estilos globales
+├── pages/index.astro           # markup (upload screen + dashboard)
 ├── scripts/
-│   └── app.js             # toda la lógica: parseo, filtros, render, gráficos
-└── styles/
-    └── global.css         # sistema de diseño (tema "ledger")
+│   ├── app.js                  # arranque y listeners globales
+│   ├── upload.js               # parseo del Excel
+│   ├── filters.js              # filtros y exclusiones
+│   ├── state.js                # estado compartido
+│   ├── metrics.js              # agregados calculados una vez por filtro + detección (fijos, suscripciones)
+│   ├── accounts.js             # saldos, divisas y movimientos por cuenta
+│   ├── externalData.js         # inflación INDEC y dólar (argentinadatos.com)
+│   ├── config.js               # reglas de detección configurables
+│   ├── storage.js              # localStorage versionado
+│   ├── helpers.js              # formato, escape de HTML, opciones de Chart.js
+│   └── renderers/              # una vista por archivo
+└── styles/global.css           # sistema de diseño (tema "ledger")
 ```
 
 ## 📝 Licencia

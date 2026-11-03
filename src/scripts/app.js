@@ -7,6 +7,14 @@ import { DEMO_DATA } from './demo.js';
 import { initComentariosListeners } from './renderers/comentarios.js';
 import { initAnalisisListeners, exportCSV } from './renderers/analisis.js';
 import { initPresupuestoListeners } from './renderers/presupuesto.js';
+import { initPatrimonioListeners } from './renderers/patrimonio.js';
+import { initCuentasListeners } from './renderers/cuentas.js';
+import { initGastosListeners } from './renderers/gastos.js';
+import { initAhorrosListeners } from './renderers/ahorros.js';
+import { initReportListeners } from './renderers/report.js';
+import { loadInflation, loadFx } from './externalData.js';
+import { refreshExclusions } from './filters.js';
+import { initThemes } from './themes.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('fileInput').addEventListener('change', (e) => {
@@ -105,5 +113,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initComentariosListeners();
   initAnalisisListeners();
   initPresupuestoListeners();
+  initPatrimonioListeners();
+  initCuentasListeners();
+  initGastosListeners();
+  initAhorrosListeners();
+  initReportListeners();
+  initThemes();
+
+  // las reglas y los datos externos (inflación, dólar) re-renderizan todo cuando cambian
+  const refresh = () => { if (document.getElementById('app').style.display === 'block') applyFilters(); };
+  document.addEventListener('config-changed', () => { refreshExclusions(); refresh(); });
+  document.addEventListener('external-data', refresh);
+  Promise.all([loadInflation(), loadFx()]).then(refresh);
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
 });
