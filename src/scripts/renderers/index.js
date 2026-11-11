@@ -10,6 +10,8 @@ import { renderPresupuesto } from './presupuesto.js';
 import { renderPatrimonio } from './patrimonio.js';
 import { renderAnalisis } from './analisis.js';
 import { renderHabitos, renderResumenExtra } from './habitos.js';
+import { renderMetas } from './metas.js';
+import { renderFileDiff } from './fileDiff.js';
 
 export function renderAll() {
   renderResumen();
@@ -25,6 +27,8 @@ export function renderAll() {
   renderAnalisis();
   renderHabitos();
   renderResumenExtra();
+  renderMetas();
+  renderFileDiff();
 }
 
 export { renderResumen, renderGastos, renderIngresos, renderFlujo, renderAhorros, renderComentarios, renderCuentas, renderProyeccion };

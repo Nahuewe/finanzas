@@ -1,7 +1,8 @@
 import { RAW, C, COLORS, A } from '../state.js';
 import { fmt, fmtFull, esc, sum, mkChart, axX, axY, legendStyle, monthLabel, chartOpts } from '../helpers.js';
 import { allAccounts, accountCurrency, loadSaldos, estimatedBalance, monthEndBalances } from '../accounts.js';
-import { FX, CASAS, fxAt, fxOnDay, loadFx, inflBetween } from '../externalData.js';
+import { FX, CASAS, fxAt, marketRate, loadFx, inflBetween } from '../externalData.js';
+import { store } from '../storage.js';
 import { matcher } from '../config.js';
 
 const ymOf = (f) => f?.slice(0, 7);
@@ -197,23 +198,31 @@ function renderAudit() {
     ...RAW.transferencias.filter((t) => t.monedaEntrante === 'USD' && t.monedaSaliente !== 'USD').map((t) => ({ fecha: t.fecha, nombre: `${t.cuentaOrigen} → ${t.cuentaDestino}`, usd: t.montoEntrante, ars: t.montoSaliente, tipo: 'transf.' })),
   ].filter((r) => r.usd > 0 && r.ars > 0).map((r) => {
     const imp = r.ars / r.usd;
-    const mkt = FX.state === 'ok' ? fxOnDay(r.fecha) : 0;
-    return { ...r, imp, mkt, dif: mkt ? (imp / mkt - 1) * 100 : null };
+    // si el comentario dice OFICIAL / MEP / BLUE se compara contra ese dólar; si no, contra el elegido arriba
+    const { casa, rate: mkt } = FX.state === 'ok' ? marketRate(r.fecha, r.nombre) : { casa: FX.casa, rate: 0 };
+    return { ...r, imp, mkt, casa, dif: mkt ? (imp / mkt - 1) * 100 : null };
   }).sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  const chk = document.getElementById('fxRevalue');
+  if (chk) chk.checked = !!store.get('fxRevalue', false);
 
   const flagged = rows.filter((r) => r.dif !== null && Math.abs(r.dif) > 10);
   note.textContent = rows.length
-    ? `${rows.length} operaciones en dólares · ${flagged.length} con cotización implícita a más de 10% del dólar ${CASAS[FX.casa]} del día (pueden ser impuestos/recargos, otro tipo de cambio o un error de carga).`
+    ? `${rows.length} operaciones en dólares · ${flagged.length} con cotización implícita a más de 10% del dólar del día (pueden ser impuestos/recargos, otro tipo de cambio o un error de carga). Se compara contra el dólar que nombre el comentario (Oficial, MEP, Blue) o, si no dice nada, contra el ${CASAS[FX.casa]}.`
     : '';
   el.innerHTML = rows.length ? `<table class="tbl"><thead><tr><th>Fecha</th><th>Operación</th><th class="r">USD</th><th class="r">ARS</th><th class="r">Implícita</th><th class="r">Mercado</th><th class="r">Dif.</th></tr></thead><tbody>${rows.map((r) => {
     const bad = r.dif !== null && Math.abs(r.dif) > 10;
-    return `<tr><td class="muted">${esc(r.fecha)}</td><td>${esc(r.nombre).slice(0, 70)}</td><td class="r">${r.usd.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td><td class="r">${fmtFull(r.ars)}</td><td class="r">${fmtFull(r.imp)}</td><td class="r muted">${r.mkt ? fmtFull(r.mkt) : '—'}</td><td class="r ${bad ? 'neg' : 'pos'}">${r.dif === null ? '—' : (r.dif >= 0 ? '+' : '') + r.dif.toFixed(0) + '%'}</td></tr>`;
+    return `<tr><td class="muted">${esc(r.fecha)}</td><td>${esc(r.nombre).slice(0, 70)}</td><td class="r">${r.usd.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</td><td class="r">${fmtFull(r.ars)}</td><td class="r">${fmtFull(r.imp)}</td><td class="r muted" style="white-space:nowrap">${r.mkt ? `${fmtFull(r.mkt)} ${esc(CASAS[r.casa])}` : '—'}</td><td class="r ${bad ? 'neg' : 'pos'}">${r.dif === null ? '—' : (r.dif >= 0 ? '+' : '') + r.dif.toFixed(0) + '%'}</td></tr>`;
   }).join('')}</tbody></table>` : '<div class="empty-state">Sin operaciones en dólares.</div>';
 }
 
 export function initPatrimonioListeners() {
   document.getElementById('fxSelect')?.addEventListener('change', async (e) => {
     await loadFx(e.target.value);
-    renderPatrimonio();
+    document.dispatchEvent(new CustomEvent('external-data')); // la cotización elegida afecta cuentas, colchón y revaluación
+  });
+  document.getElementById('fxRevalue')?.addEventListener('change', (e) => {
+    store.set('fxRevalue', e.target.checked);
+    document.dispatchEvent(new CustomEvent('external-data'));
   });
 }

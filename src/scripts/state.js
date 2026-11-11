@@ -32,7 +32,7 @@ export const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Vier
 
 export let RAW = { gastos: [], ingresos: [], transferencias: [] };
 export let FILTERED = { gastos: [], ingresos: [] };
-export let FILTERS = { year: 'all', month: 'all', period: 'all', account: 'all', category: 'all', minAmount: 0 };
+export let FILTERS = { year: 'all', month: 'all', period: 'all', account: 'all', category: 'all', minAmount: 0, from: '', to: '', text: '' };
 export let CHARTS = {};
 export let METRICS = null;
 export let CAT_SEARCH = '';

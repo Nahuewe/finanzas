@@ -1,14 +1,11 @@
 import { FILTERED, METRICS, COLORS, C } from '../state.js';
 import { fmt, fmtFull, esc, sum, groupBy, mkChart, legendStyle } from '../helpers.js';
-import { store } from '../storage.js';
 import { detectFixed } from '../metrics.js';
 import { allAccounts, accountCurrency, loadSaldos, countedBalance } from '../accounts.js';
-import { FX } from '../externalData.js';
+import { FX, INFL } from '../externalData.js';
+import { loadBudgets, saveBudgets, loadBudgetMeta, saveBudgetMeta, budgetFactor, effectiveBudgets, NEAR } from '../budget.js';
 
 let BUD_MONTH = null; // null = mes más reciente del período filtrado
-
-const loadBudgets = () => store.get('presupuestos', {}) || {};
-const saveBudgets = (b) => store.set('presupuestos', b);
 
 function monthInfo(g) {
   const months = METRICS.gMonths;
@@ -41,21 +38,35 @@ export function renderPresupuesto() {
   const sel = document.getElementById('budMonth');
   sel.innerHTML = [...months].reverse().map((m) => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m}</option>`).join('');
 
-  const budgets = loadBudgets();
+  // topes vigentes para el mes elegido (indexados por inflación si el ajuste automático está activo)
+  const meta = loadBudgetMeta();
+  const factor = budgetFactor(cur, meta);
+  const budgets = effectiveBudgets(cur);
+  const auto = document.getElementById('budAuto');
+  if (auto) auto.checked = !!meta.auto;
+  const noteEl = document.getElementById('budAutoNote');
+  if (noteEl) {
+    noteEl.textContent = !meta.auto ? ''
+      : INFL.state !== 'ok' ? 'Sin datos de inflación: los topes se muestran sin ajustar.'
+      : factor === 1 ? `Mes base de los topes: ${meta.base}.`
+      : `Topes en pesos de ${meta.base}, ajustados ${factor > 1 ? '+' : ''}${((factor - 1) * 100).toFixed(1)}% por inflación para ${cur}.`;
+  }
+
   const inMonth = g.filter((r) => r.fecha.startsWith(cur));
   const spent = groupBy(inMonth, 'cat');
   const cats = [...new Set([...Object.keys(spent), ...Object.keys(budgets)])].sort((a, b) => (spent[b] || 0) - (spent[a] || 0));
   const pace = elapsed < daysInMonth ? daysInMonth / elapsed : 1;
 
-  let totB = 0, totS = 0, over = 0;
+  let totB = 0, totS = 0, over = 0, near = 0;
   const rows = cats.map((c) => {
     const b = budgets[c] || 0;
     const s = spent[c] || 0;
     const proj = s * pace;
-    if (b) { totB += b; totS += s; if (s > b) over++; }
+    const isNear = b && s <= b && s >= b * NEAR;
+    if (b) { totB += b; totS += s; if (s > b) over++; else if (isNear) near++; }
     const pct = b ? s / b * 100 : 0;
-    const state = !b ? '' : s > b ? 'neg' : proj > b ? 'warn' : 'pos';
-    const msg = !b ? 'sin tope' : s > b ? `+${fmt(s - b)} excedido` : proj > b ? `ritmo: ${fmt(proj)}` : `quedan ${fmt(b - s)}`;
+    const state = !b ? '' : s > b ? 'neg' : isNear || proj > b ? 'warn' : 'pos';
+    const msg = !b ? 'sin tope' : s > b ? `+${fmt(s - b)} excedido` : isNear ? `⚠ cerca del tope · quedan ${fmt(b - s)}` : proj > b ? `ritmo: ${fmt(proj)}` : `quedan ${fmt(b - s)}`;
     const color = state === 'neg' ? C.red : state === 'warn' ? C.gold : C.green;
     return `<tr>
       <td><strong>${esc(c)}</strong></td>
@@ -71,7 +82,7 @@ export function renderPresupuesto() {
     <div class="kpi blue"><div class="label">Presupuesto total</div><div class="value">${totB ? fmt(totB) : '-'}</div><div class="sub">${Object.keys(budgets).length} categorías</div></div>
     <div class="kpi yellow"><div class="label">Gastado (c/ tope)</div><div class="value">${fmt(totS)}</div><div class="sub">${totB ? Math.round(totS / totB * 100) + '% del tope' : 'definí topes'}</div></div>
     <div class="kpi ${totB - totS >= 0 ? 'green' : 'red'}"><div class="label">Disponible</div><div class="value">${totB ? fmt(totB - totS) : '-'}</div><div class="sub">restante del mes</div></div>
-    <div class="kpi ${over ? 'red' : 'green'}"><div class="label">Categorías excedidas</div><div class="value">${over}</div><div class="sub">${over ? 'revisá los topes' : 'todo en orden'}</div></div>
+    <div class="kpi ${over ? 'red' : 'green'}"><div class="label">Categorías excedidas</div><div class="value">${over}</div><div class="sub">${near ? `${near} cerca del tope (≥80%)` : over ? 'revisá los topes' : 'todo en orden'}</div></div>
     <div class="kpi orange"><div class="label">Gasto total del mes</div><div class="value">${fmt(sum(inMonth))}</div><div class="sub">proyección ${fmt(sum(inMonth) * pace)}</div></div>`;
 
   tbl.innerHTML = `<table class="tbl"><thead><tr><th>Categoría</th><th>Tope mensual</th><th class="r">Gastado</th><th>Avance</th><th class="r">Estado</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -126,9 +137,18 @@ export function initPresupuestoListeners() {
     if (!inp) return;
     const b = loadBudgets();
     const v = parseFloat(inp.value);
-    if (v > 0) b[inp.dataset.cat] = v; else delete b[inp.dataset.cat];
+    // lo que se escribe es el tope del mes en pantalla: se guarda llevado a pesos del mes base
+    const f = budgetFactor(monthInfo(FILTERED.gastos)?.cur || '', loadBudgetMeta());
+    if (v > 0) b[inp.dataset.cat] = v / f; else delete b[inp.dataset.cat];
     saveBudgets(b);
     renderPresupuesto();
+  });
+
+  document.getElementById('budAuto')?.addEventListener('change', (e) => {
+    const meta = loadBudgetMeta();
+    const cur = monthInfo(FILTERED.gastos)?.cur || null;
+    saveBudgetMeta({ auto: e.target.checked, base: meta.base || cur });
+    document.dispatchEvent(new CustomEvent('external-data')); // también cambia alertas e informe
   });
 
   document.getElementById('budSuggestBtn')?.addEventListener('click', () => {
@@ -138,15 +158,16 @@ export function initPresupuestoListeners() {
     const idx = info.months.indexOf(info.cur);
     const prev = info.months.slice(Math.max(0, idx - 3), idx);
     const base = prev.length ? prev : [info.cur];
-    const b = loadBudgets();
+    const b = {};
     Object.entries(groupBy(g.filter((r) => base.some((m) => r.fecha.startsWith(m))), 'cat')).forEach(([c, v]) => {
       b[c] = Math.round(v / base.length * 1.05 / 1000) * 1000 || 1000;
     });
     saveBudgets(b);
+    saveBudgetMeta({ ...loadBudgetMeta(), base: info.cur }); // los topes sugeridos quedan en pesos de este mes
     renderPresupuesto();
   });
 
   document.getElementById('budClearBtn')?.addEventListener('click', () => {
-    if (confirm('¿Borrar todos los topes?')) { saveBudgets({}); renderPresupuesto(); }
+    if (confirm('¿Borrar todos los topes?')) { saveBudgets({}); saveBudgetMeta({ ...loadBudgetMeta(), base: null }); renderPresupuesto(); }
   });
 }

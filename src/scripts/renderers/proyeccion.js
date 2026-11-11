@@ -1,32 +1,27 @@
-import { METRICS, C, A } from '../state.js';
-import { fmt, fmtFull, mkChart, axX, axY, tooltipARS, legendStyle } from '../helpers.js';
+import { FILTERED, METRICS, C, A } from '../state.js';
+import { fmt, fmtFull, mkChart, axY, chartOpts } from '../helpers.js';
+import { store } from '../storage.js';
+import { detectFixed } from '../metrics.js';
+import { projectScenarios } from '../projection.js';
+import { INFL, inflOf } from '../externalData.js';
 
 const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MONTH_FULL  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const short = (m) => MONTH_NAMES[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
 
-function linealTrend(values) {
-  const n = values.length;
-  if (n < 2) return 0;
-  const meanX = (n - 1) / 2;
-  const meanY = values.reduce((a, v) => a + v, 0) / n;
-  const num = values.reduce((a, v, i) => a + (i - meanX) * (v - meanY), 0);
-  const den = values.reduce((a, _, i) => a + (i - meanX) ** 2, 0);
-  return den === 0 ? 0 : num / den;
-}
-
-function nextMonths(fromYM, count) {
-  const [y, m] = fromYM.split('-').map(Number);
-  return Array.from({ length: count }, (_, k) => {
-    const d = new Date(y, m - 1 + k + 1, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+/** Inflación mensual esperada: la que cargó el usuario o el promedio de los últimos 3 datos del INDEC. */
+function expectedInflation() {
+  const manual = store.get('projInfl', null);
+  if (manual !== null && manual !== '') return { value: +manual || 0, source: 'manual' };
+  const ks = Object.keys(INFL.data).sort().slice(-3);
+  if (!ks.length) return { value: 0, source: 'sin datos' };
+  return { value: ks.reduce((a, k) => a + INFL.data[k], 0) / ks.length, source: `promedio INDEC ${ks[0]} a ${ks.at(-1)}` };
 }
 
 export function renderProyeccion() {
   const { months, monG, monI } = METRICS;
-
-  const kpiEl    = document.getElementById('kpiProyeccion');
-  const tablaEl  = document.getElementById('proyeccionTabla');
+  const kpiEl = document.getElementById('kpiProyeccion');
+  const tablaEl = document.getElementById('proyeccionTabla');
 
   if (months.length < 2) {
     kpiEl.innerHTML = '<div class="empty-state">Necesitás al menos 2 meses de datos para proyectar.</div>';
@@ -34,103 +29,104 @@ export function renderProyeccion() {
     return;
   }
 
+  // parte fija del gasto por mes (conceptos repetidos casi todos los meses)
+  const fixedByMonth = {};
+  detectFixed(FILTERED.gastos).forEach((f) => f.items.forEach((r) => {
+    const m = r.fecha?.slice(0, 7);
+    if (m) fixedByMonth[m] = (fixedByMonth[m] || 0) + r.monto;
+  }));
 
-  const WIN = Math.min(months.length, 6);
-  const recent = months.slice(-WIN);
-  const avgG = recent.reduce((a, m) => a + (monG[m] || 0), 0) / WIN;
-  const avgI = recent.reduce((a, m) => a + (monI[m] || 0), 0) / WIN;
-  const trendG = linealTrend(recent.map((m) => monG[m] || 0));
-  const trendI = linealTrend(recent.map((m) => monI[m] || 0));
+  const exp = expectedInflation();
+  const inp = document.getElementById('projInfl');
+  if (inp && document.activeElement !== inp) inp.value = exp.source === 'manual' ? exp.value : '';
+  if (inp) inp.placeholder = exp.source === 'manual' ? '' : exp.value.toFixed(1);
+  const note = document.getElementById('projInflNote');
+  if (note) note.textContent = `Inflación mensual esperada: ${exp.value.toFixed(1)}% (${exp.source}). Los montos proyectados están en pesos de cada mes.`;
 
-  const PROJ = 6;
-  const projMonths = nextMonths(months[months.length - 1], PROJ);
-  const projG = projMonths.map((_, k) => Math.max(0, avgG + trendG * (k + 1)));
-  const projI = projMonths.map((_, k) => Math.max(0, avgI + trendI * (k + 1)));
-  const projNeto = projI.map((v, k) => v - projG[k]);
-  let cum = 0;
-  const projAcum = projNeto.map((n) => { cum += n; return cum; });
-
-  const totalProjNeto = projNeto.reduce((a, v) => a + v, 0);
-  const avgSave = totalProjNeto / PROJ;
+  const HORIZON = 6;
+  const p = projectScenarios({ months, monG, monI, fixedByMonth, inflOf: (m) => inflOf(m), expectedInfl: exp.value, horizon: HORIZON });
+  const { base, pesimista, optimista } = p.scenarios;
+  const projMonths = p.projMonths;
+  const last = (arr) => arr[arr.length - 1];
+  const sign = (v) => (v >= 0 ? '+' : '');
+  const cls = (v) => (v >= 0 ? 'green' : 'red');
 
   kpiEl.innerHTML = `
-    <div class="kpi blue"><div class="label">Ingreso prom. proy.</div><div class="value">${fmt(avgI)}</div><div class="sub">por mes</div></div>
-    <div class="kpi red"><div class="label">Gasto prom. proy.</div><div class="value">${fmt(avgG)}</div><div class="sub">por mes</div></div>
-    <div class="kpi ${totalProjNeto >= 0 ? 'green' : 'red'}"><div class="label">Neto acumulado (6m)</div><div class="value">${totalProjNeto >= 0 ? '+' : ''}${fmt(totalProjNeto)}</div><div class="sub">${totalProjNeto >= 0 ? 'superávit' : 'déficit'}</div></div>
-    <div class="kpi ${avgSave >= 0 ? 'green' : 'red'}"><div class="label">Ahorro prom. proy.</div><div class="value">${avgSave >= 0 ? '+' : ''}${fmt(avgSave)}</div><div class="sub">por mes</div></div>
-    <div class="kpi purple"><div class="label">Tendencia gastos</div><div class="value">${trendG >= 0 ? '▲' : '▼'} ${fmt(Math.abs(trendG))}</div><div class="sub">por mes</div></div>
-    <div class="kpi ${trendI >= 0 ? 'green' : 'red'}"><div class="label">Tendencia ingresos</div><div class="value">${trendI >= 0 ? '▲' : '▼'} ${fmt(Math.abs(trendI))}</div><div class="sub">por mes</div></div>`;
+    <div class="kpi blue"><div class="label">Ingreso base</div><div class="value">${fmt(p.levels.base.ing)}</div><div class="sub">mediana ${p.window} meses, pesos de hoy</div></div>
+    <div class="kpi purple"><div class="label">Gastos fijos</div><div class="value">${fmt(p.fixedBase)}</div><div class="sub">por mes, pesos de hoy</div></div>
+    <div class="kpi orange"><div class="label">Gastos variables</div><div class="value">${fmt(p.levels.base.variables)}</div><div class="sub">entre ${fmt(p.levels.optimista.variables)} y ${fmt(p.levels.pesimista.variables)}</div></div>
+    <div class="kpi ${cls(last(base.acum))}"><div class="label">Neto ${HORIZON} meses (base)</div><div class="value">${sign(last(base.acum))}${fmt(last(base.acum))}</div><div class="sub">${last(base.acum) >= 0 ? 'superávit' : 'déficit'}</div></div>
+    <div class="kpi ${cls(last(pesimista.acum))}"><div class="label">Escenario pesimista</div><div class="value">${sign(last(pesimista.acum))}${fmt(last(pesimista.acum))}</div><div class="sub">ingresos bajos, gastos altos</div></div>
+    <div class="kpi ${cls(last(optimista.acum))}"><div class="label">Escenario optimista</div><div class="value">${sign(last(optimista.acum))}${fmt(last(optimista.acum))}</div><div class="sub">ingresos altos, gastos bajos</div></div>`;
 
-  const histLabels = months.map((m) => MONTH_NAMES[+m.slice(5) - 1] + ' ' + m.slice(2, 4));
-  const projLabels = projMonths.map((m) => MONTH_NAMES[+m.slice(5) - 1] + ' ' + m.slice(2, 4));
-  const allLabels  = [...histLabels, ...projLabels];
   const nullH = months.map(() => null);
   const nullP = projMonths.map(() => null);
-  const lastG = monG[months[months.length - 1]] || 0;
-  const lastI = monI[months[months.length - 1]] || 0;
+  const lastG = monG[months.at(-1)] || 0;
+  const lastI = monI[months.at(-1)] || 0;
+  const joint = (first, arr) => [...nullH.slice(0, -1), first, ...arr];
+  const dot = (ctx) => (ctx.dataIndex >= months.length - 1 ? 3 : 0);
 
   mkChart('chartProyeccion', {
     type: 'bar',
     data: {
-      labels: allLabels,
+      labels: [...months.map(short), ...projMonths.map(short)],
       datasets: [
         { label: 'Ingresos reales', data: [...months.map((m) => monI[m] || 0), ...nullP], backgroundColor: A('pos', .2), borderColor: C.green, borderWidth: 1.5, borderRadius: 2, order: 2 },
-        { label: 'Gastos reales',   data: [...months.map((m) => monG[m] || 0), ...nullP], backgroundColor: A('neg', .2), borderColor: C.red,   borderWidth: 1.5, borderRadius: 2, order: 2 },
-        { label: 'Ingresos proy.',  data: [...nullH.slice(0, -1), lastI, ...projI], type: 'line', borderColor: C.green, borderDash: [5,4], borderWidth: 2, pointRadius: (ctx) => ctx.dataIndex >= months.length - 1 ? 3 : 0, pointBackgroundColor: C.green, backgroundColor: 'transparent', tension: 0.3, order: 1 },
-        { label: 'Gastos proy.',    data: [...nullH.slice(0, -1), lastG, ...projG], type: 'line', borderColor: C.red,   borderDash: [5,4], borderWidth: 2, pointRadius: (ctx) => ctx.dataIndex >= months.length - 1 ? 3 : 0, pointBackgroundColor: C.red,   backgroundColor: 'transparent', tension: 0.3, order: 1 },
+        { label: 'Gastos reales', data: [...months.map((m) => monG[m] || 0), ...nullP], backgroundColor: A('neg', .2), borderColor: C.red, borderWidth: 1.5, borderRadius: 2, order: 2 },
+        { label: 'Ingresos proy. (base)', data: joint(lastI, base.ing), type: 'line', borderColor: C.green, borderDash: [5, 4], borderWidth: 2, pointRadius: dot, pointBackgroundColor: C.green, backgroundColor: 'transparent', tension: 0.3, order: 1 },
+        { label: 'Gastos proy. (base)', data: joint(lastG, base.gasto), type: 'line', borderColor: C.red, borderDash: [5, 4], borderWidth: 2, pointRadius: dot, pointBackgroundColor: C.red, backgroundColor: 'transparent', tension: 0.3, order: 1 },
+        { label: 'De los cuales fijos', data: joint(null, base.fijos), type: 'line', borderColor: C.purple, borderDash: [2, 3], borderWidth: 1.5, pointRadius: 0, backgroundColor: 'transparent', tension: 0.3, order: 1 },
       ],
     },
-    options: { responsive: true, plugins: { legend: { display: true, labels: legendStyle.labels }, tooltip: tooltipARS }, scales: { x: axX, y: axY() } },
+    options: chartOpts({ legend: true }),
   });
 
+  const line = (label, data, color, dash) => ({ label, data, borderColor: color, backgroundColor: 'transparent', borderWidth: 2, borderDash: dash, tension: 0.3, pointRadius: 3, pointBackgroundColor: color });
   mkChart('chartAcumuladoProy', {
     type: 'line',
     data: {
-      labels: projLabels,
-      datasets: [{
-        label: 'Neto acumulado proy.',
-        data: projAcum,
-        borderColor: C.purple,
-        backgroundColor: C.purpleSoftBg,
-        borderWidth: 2,
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointBackgroundColor: projAcum.map((v) => v >= 0 ? C.green : C.red),
-        pointBorderColor:     projAcum.map((v) => v >= 0 ? C.green : C.red),
-      }],
+      labels: projMonths.map(short),
+      datasets: [
+        line('Optimista', optimista.acum, C.green, [4, 3]),
+        { ...line('Base', base.acum, C.purple), backgroundColor: C.purpleSoftBg, fill: true },
+        line('Pesimista', pesimista.acum, C.red, [4, 3]),
+      ],
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, tooltip: tooltipARS },
-      scales: {
-        x: axX,
-        y: { ticks: { color: C.inkFaint, callback: (v) => (v >= 0 ? '+' : '') + fmt(v), font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: C.grid } },
-      },
-    },
+    options: chartOpts({
+      legend: true,
+      tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${sign(c.raw)}${fmtFull(c.raw)}` } },
+      y: axY((v) => sign(v) + fmt(v)),
+    }),
   });
 
+  const money = (v) => `<td style="text-align:right;color:${v >= 0 ? 'var(--green)' : 'var(--red)'}">${sign(v)}${fmtFull(v)}</td>`;
   tablaEl.innerHTML = `
     <table class="tbl">
       <thead><tr>
         <th>Mes</th>
-        <th style="text-align:right">Ingresos proy.</th>
-        <th style="text-align:right">Gastos proy.</th>
-        <th style="text-align:right">Neto</th>
-        <th style="text-align:right">Acumulado</th>
+        <th style="text-align:right">Ingresos</th>
+        <th style="text-align:right">Fijos</th>
+        <th style="text-align:right">Variables</th>
+        <th style="text-align:right">Neto (base)</th>
+        <th style="text-align:right">Acum. pesimista</th>
+        <th style="text-align:right">Acum. base</th>
+        <th style="text-align:right">Acum. optimista</th>
       </tr></thead>
       <tbody>
-        ${projMonths.map((m, k) => {
-          const [y, mo] = m.split('-').map(Number);
-          const neto = projNeto[k], acum = projAcum[k];
-          return `<tr>
-            <td>${MONTH_FULL[mo - 1]} ${y}</td>
-            <td style="text-align:right;color:var(--green)">${fmtFull(projI[k])}</td>
-            <td style="text-align:right;color:var(--red)">${fmtFull(projG[k])}</td>
-            <td style="text-align:right;color:${neto >= 0 ? 'var(--green)' : 'var(--red)'}">${neto >= 0 ? '+' : ''}${fmtFull(neto)}</td>
-            <td style="text-align:right;color:${acum >= 0 ? 'var(--green)' : 'var(--red)'}">${acum >= 0 ? '+' : ''}${fmtFull(acum)}</td>
-          </tr>`;
-        }).join('')}
+        ${projMonths.map((m, k) => `<tr>
+            <td>${MONTH_FULL[+m.slice(5) - 1]} ${m.slice(0, 4)}</td>
+            <td style="text-align:right;color:var(--green)">${fmtFull(base.ing[k])}</td>
+            <td style="text-align:right">${fmtFull(base.fijos[k])}</td>
+            <td style="text-align:right">${fmtFull(base.variables[k])}</td>
+            ${money(base.neto[k])}${money(pesimista.acum[k])}${money(base.acum[k])}${money(optimista.acum[k])}
+          </tr>`).join('')}
       </tbody>
     </table>`;
+}
+
+export function initProyeccionListeners() {
+  document.getElementById('projInfl')?.addEventListener('change', (e) => {
+    if (e.target.value === '') store.remove('projInfl'); else store.set('projInfl', Math.max(0, +e.target.value || 0));
+    renderProyeccion();
+  });
 }

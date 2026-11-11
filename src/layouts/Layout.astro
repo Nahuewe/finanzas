@@ -15,7 +15,10 @@ const { title = 'Mis Finanzas — Ledger Personal' } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <meta name="description" content="Análisis financiero personal: gastos, ingresos, flujo y oportunidades de ahorro a partir de tu propio Excel." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <meta name="theme-color" content="#0e0b17" />
     <title>{title}</title>
     <script is:inline>
       try {
@@ -33,5 +36,12 @@ const { title = 'Mis Finanzas — Ledger Personal' } = Astro.props;
   </head>
   <body>
     <slot />
+    {import.meta.env.PROD && (
+      <script is:inline>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+        }
+      </script>
+    )}
   </body>
 </html>

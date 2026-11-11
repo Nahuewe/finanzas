@@ -14,7 +14,14 @@ Todo el procesamiento ocurre **en el navegador** — el archivo nunca se sube a 
 - **Análisis**: ahorro real vs contable, gasto nominal vs real (inflación INDEC mes a mes), año contra año, Pareto, anomalías y transferencias entre cuentas.
 - **Patrimonio**: evolución del saldo por cuenta (reconstruido desde el saldo actual) y panel de **dólares** (compras, precio promedio vs mercado, resultado nominal y real).
 - **Ahorros**: alertas y oportunidades calculadas dinámicamente; las reglas (qué categorías son hormiga, suscripciones, ahorro, etc.) son **configurables** desde la misma pestaña.
-- **Informe mensual imprimible** (botón 🖨 Informe → guardar como PDF) y **exportación CSV** de los datos filtrados.
+- **Informe imprimible mensual o anual** (botón 🖨 Informe → guardar como PDF), con gráfico incluido, y **exportación CSV** de los datos filtrados.
+- **El último Excel queda guardado en el navegador** (IndexedDB): la app abre directo en tu tablero. Al subir uno nuevo, el Resumen muestra **qué cambió** respecto de la carga anterior.
+- **Metas de ahorro** en pesos o dólares, con avance, aporte mensual necesario y fecha estimada; se pueden ligar a una cuenta.
+- **Proyección por escenarios** (pesimista / base / optimista) separando gastos fijos de variables y ajustando por inflación esperada.
+- **Presupuesto indexado**: los topes pueden ajustarse solos por inflación y avisan al llegar al 80%.
+- **Dólares**: auditoría de conversiones contra el dólar que nombre el comentario (Oficial, MEP, Blue) y opción de valuar las operaciones al dólar de mercado del día.
+- **Otros formatos de Excel**: mapeo de columnas configurable en la pantalla de carga (incluye exportaciones de banco de una sola hoja con montos + y −).
+- **Instalable (PWA)**: en el build de producción funciona sin conexión y se puede instalar en el celular.
 - **Datos públicos** (API argentinadatos.com): inflación mensual y cotización del dólar (MEP/Blue/Oficial), con caché de 12 h.
 - **100% responsive**, pensado mobile-first.
 - Modo demo incluido para probar sin subir un archivo propio.
@@ -41,7 +48,7 @@ Abrí `http://localhost:4321`.
 
 ```bash
 npm run build
-npm run preview   # para previsualizar el build localmente
+npm run preview   # para previsualizar el build localmente (acá ya funciona el modo instalable / sin conexión)
 ```
 
 El resultado queda en `dist/`.
@@ -69,9 +76,17 @@ Ya incluye un workflow listo en `.github/workflows/deploy.yml` usando la acción
 - [SheetJS / xlsx](https://sheetjs.com) — parseo del Excel en el cliente (vía CDN).
 - CSS plano con variables — sin frameworks de estilos.
 
+## 🧪 Pruebas
+
+```bash
+npm test
+```
+
+Corre las pruebas de los cálculos (lectura del Excel, comparación de archivos, métricas, proyección, presupuesto, metas y saldos por cuenta) con el runner nativo de Node, sin dependencias extra.
+
 ## 🔒 Privacidad
 
-El Excel nunca sale del navegador. Lo único que se consulta afuera son datos públicos (inflación y dólar). Saldos, topes y reglas se guardan solo en `localStorage` de tu navegador.
+El Excel nunca sale del navegador. Lo único que se consulta afuera son datos públicos (inflación y dólar). Saldos, topes, metas y reglas se guardan solo en `localStorage`, y el último Excel en IndexedDB, ambos en tu navegador.
 
 ## 📁 Estructura
 
@@ -81,7 +96,11 @@ src/
 ├── pages/index.astro           # markup (upload screen + dashboard)
 ├── scripts/
 │   ├── app.js                  # arranque y listeners globales
-│   ├── upload.js               # parseo del Excel
+│   ├── upload.js               # carga del archivo y mapeo de columnas
+│   ├── parse.js                # lectura del Excel (funciones puras)
+│   ├── persist.js / diff.js    # archivo guardado en el navegador y comparación entre cargas
+│   ├── projection.js           # proyección por escenarios
+│   ├── budget.js / goals.js    # topes indexados y metas de ahorro
 │   ├── filters.js              # filtros y exclusiones
 │   ├── state.js                # estado compartido
 │   ├── metrics.js              # agregados calculados una vez por filtro + detección (fijos, suscripciones)

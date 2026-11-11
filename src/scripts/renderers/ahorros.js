@@ -3,6 +3,7 @@ import { fmt, fmtFull, esc, sortedEntries, sum } from '../helpers.js';
 import { getConfig, setConfig, resetConfig, matcher, duplicateGroups, DEFAULT_CONFIG, CONFIG_LABELS } from '../config.js';
 import { subscriptionChanges } from '../metrics.js';
 import { INFL } from '../externalData.js';
+import { effectiveBudgets, budgetStatus } from '../budget.js';
 
 export function renderAhorros() {
   const g = FILTERED.gastos, i = FILTERED.ingresos;
@@ -63,6 +64,21 @@ export function renderAhorros() {
     alertCount++;
     alerts.push({ type: 'i-warn', ico: '📈', title: `${esc(c.name)} subió ${c.pct.toFixed(0)}% (inflación ${c.infl.toFixed(0)}%)`, body: `De ${fmtFull(c.prevAmt)} a ${fmtFull(c.lastAmt)} entre ${c.prev} y ${c.last}. Costo anual a este precio: ${fmt(c.yearly)}. Revisá si sigue valiendo la pena o si hay un plan más barato.` });
   });
+
+  // presupuesto del último mes: categorías excedidas o cerca del tope (≥80%)
+  const lastM = METRICS.gMonths.at(-1);
+  if (lastM) {
+    const spentLast = Object.fromEntries(Object.entries(METRICS.catMonthG).map(([c, m]) => [c, m[lastM] || 0]));
+    const st = budgetStatus(spentLast, effectiveBudgets(lastM));
+    const over = st.filter((x) => x.state === 'over'), near = st.filter((x) => x.state === 'near');
+    if (over.length) {
+      alertCount++;
+      alerts.push({ type: 'i-warn', ico: '🧾', title: `${over.length} categoría(s) pasaron su tope en ${lastM}`, body: over.map((x) => `${esc(x.cat)} (+${fmt(x.gastado - x.tope)})`).join(', ') + '.' });
+    }
+    if (near.length) {
+      alerts.push({ type: 'i-info', ico: '⏳', title: `${near.length} categoría(s) cerca del tope en ${lastM}`, body: near.map((x) => `${esc(x.cat)} (${Math.round(x.pct * 100)}%, quedan ${fmt(x.tope - x.gastado)})`).join(', ') + '.' });
+    }
+  }
 
   const bigOcio = +cfg.ocioGrande || 100000;
   const isOcio = matcher('ocio');

@@ -1,109 +1,47 @@
 import { setRaw, setExcludedGasCats, setExcludedIngCats } from './state.js';
 import { buildFilterOptions, applyFilters, refreshExclusions } from './filters.js';
+import { buildData, mergeColmap, DEFAULT_COLMAP, COLMAP_LABELS } from './parse.js';
+import { store } from './storage.js';
+import { saveSnapshot, forgetSnapshots, SESSION } from './persist.js';
+import { esc } from './helpers.js';
 
 export function showLoading(v) {
   document.getElementById('loadingOverlay').classList.toggle('show', v);
 }
 
-export function formatDate(v) {
-  if (!v) return '';
-  if (v instanceof Date) return v.toISOString().split('T')[0];
-  if (typeof v === 'number') {
-    const d = new Date((v - 25569) * 86400000);
-    return d.toISOString().split('T')[0];
-  }
-  return String(v).split(' ')[0];
-}
-
 export function processFile(file) {
   showLoading(true);
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const XLSX = window.XLSX;
       const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const parsed = {};
-      wb.SheetNames.forEach((name) => {
-        const ws = wb.Sheets[name];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        if (rows.length < 2) return;
-        const header = rows[1];
-        parsed[name] = rows.slice(2).map((r) => {
-          const o = {};
-          header.forEach((h, i) => (o[h] = r[i]));
-          return o;
-        });
-      });
+      const sheets = {};
+      wb.SheetNames.forEach((name) => { sheets[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 }); });
 
-      // "10,98 USD MEP" / "600 dolares ..." — la app a veces redondea el monto de la transacción
-      const USD_RE = /(\d+(?:[.,]\d+)?)\s*(?:usd|u\$s|d[oó]lares|dolarukos)/i;
-      const mapRow = (r) => {
-        const comentario = r['Comentario'] || '';
-        const montoCuenta = +r['Cantidad en la divisa de la cuenta'] || undefined;
-        const monedaCuenta = r['Divisa de la cuenta'] || undefined;
-        const montoTrans = +r['Cantidad de la transacción en la divisa de la transacción'] || undefined;
-        const monedaTrans = r['Divisa de la transacción'] || undefined;
-        // usd: dólares reales de la operación, ya sea porque la cuenta es en USD o porque se pagó en USD desde una cuenta en pesos
-        let usd;
-        if (monedaCuenta === 'USD') usd = montoCuenta;
-        else if (monedaTrans === 'USD' && montoTrans) {
-          usd = montoTrans;
-          const m = String(comentario).match(USD_RE);
-          const exact = m ? parseFloat(m[1].replace(',', '.')) : 0;
-          if (exact && Math.abs(exact - usd) / usd < 0.06) usd = exact;
-        }
-        return {
-          fecha: formatDate(r['Fecha y hora']),
-          cat: r['Categoría'] || '',
-          cuenta: r['Cuenta'] || '',
-          monto: +r['Cantidad en la divisa predeterminada'] || 0,
-          montoCuenta,
-          monedaCuenta,
-          usd,
-          comentario
-        };
-      };
-      const gastos = (parsed['Gastos'] || []).map(mapRow).filter((r) => r.monto > 0);
-      const ingresos = (parsed['Ingresos'] || []).map(mapRow).filter((r) => r.monto > 0);
+      const { gastos, ingresos, transferencias } = buildData(sheets, store.get('colmap', {}) || {});
+      if (!gastos.length && !ingresos.length) throw new Error('sin-filas');
 
-      const pick = (r, keys) => {
-        for (const k of keys) {
-          if (r[k] !== undefined && r[k] !== '') return r[k];
-        }
-        return undefined;
-      };
-
-      const transferencias = (parsed['Transferencias'] || []).map((r) => {
-        const sal = +pick(r, ['Cantidad en divisa saliente', 'Cantidad en la divisa predeterminada', 'Cantidad']) || 0;
-        const ent = +pick(r, ['Cantidad en divisa entrante']) || 0;
-        const monedaSaliente = pick(r, ['Divisa saliente']) || 'ARS';
-        const monedaEntrante = pick(r, ['Divisa entrante']) || monedaSaliente;
-        // `monto` siempre en pesos: si la salida es en otra divisa, se toma el lado en ARS
-        const monto = monedaSaliente !== 'ARS' && monedaEntrante === 'ARS' ? ent : sal;
-        return {
-          fecha: formatDate(pick(r, ['Fecha y hora', 'Fecha'])),
-          cuentaOrigen: pick(r, ['Saliente', 'Cuenta de origen', 'Cuenta origen', 'Origen', 'Desde']) || '',
-          cuentaDestino: pick(r, ['Entrante', 'Cuenta de destino', 'Cuenta destino', 'Destino', 'Hacia']) || '',
-          monto,
-          montoSaliente: sal,
-          montoEntrante: ent || sal,
-          monedaSaliente,
-          monedaEntrante,
-          comentario: pick(r, ['Comentario']) || ''
-        };
-      }).filter((r) => r.monto > 0 && r.cuentaOrigen && r.cuentaDestino);
-
-      setRaw({ gastos, ingresos, transferencias });
-      setExcludedGasCats(new Set());
-      setExcludedIngCats(new Set());
-      initApp();
+      const raw = { gastos, ingresos, transferencias };
+      await saveSnapshot(file.name, raw);
+      loadData(raw);
     } catch (err) {
-      alert('Error al leer el archivo. Asegurate que tenga el formato correcto (hojas Gastos / Ingresos / Transferencias).');
+      alert(err.message === 'sin-filas'
+        ? 'No se encontraron movimientos en el archivo. Si tu Excel tiene otro formato, ajustá el mapeo de columnas (⚙ debajo del botón de carga).'
+        : 'Error al leer el archivo. Asegurate que tenga el formato correcto (hojas Gastos / Ingresos / Transferencias).');
       console.error(err);
     }
     showLoading(false);
   };
   reader.readAsArrayBuffer(file);
+}
+
+/** Pone los datos en uso y abre el tablero. */
+export function loadData(raw) {
+  setRaw(raw);
+  setExcludedGasCats(new Set());
+  setExcludedIngCats(new Set());
+  initApp();
 }
 
 export function initApp() {
@@ -114,4 +52,74 @@ export function initApp() {
   refreshExclusions();
   buildFilterOptions();
   applyFilters();
+}
+
+// ── archivo guardado en este navegador ──
+export function renderSavedBox() {
+  const box = document.getElementById('savedFileBox');
+  if (!box) return;
+  const cur = SESSION.current;
+  if (!cur) { box.innerHTML = ''; return; }
+  const n = cur.raw.gastos.length + cur.raw.ingresos.length;
+  box.innerHTML = `
+    <div class="saved-file">
+      <div class="saved-file-info">📄 <strong>${esc(cur.name)}</strong><span>guardado el ${new Date(cur.savedAt).toLocaleDateString('es-AR')} · ${n} movimientos</span></div>
+      <div class="saved-file-actions">
+        <button class="header-btn" id="savedContinue">↩ Continuar con este archivo</button>
+        <button class="reset-btn" id="savedForget">Olvidar</button>
+      </div>
+    </div>`;
+}
+
+// ── mapeo de columnas ──
+const flatKeys = () => ['headerRow', ...Object.keys(DEFAULT_COLMAP.sheets).map((k) => 'sheets.' + k), ...Object.keys(COLMAP_LABELS).filter((k) => k.startsWith('cols.'))];
+
+function renderColmapForm() {
+  const form = document.getElementById('colmapForm');
+  if (!form) return;
+  const cm = mergeColmap(store.get('colmap', {}) || {});
+  const val = (k) => (k === 'headerRow' ? cm.headerRow : k.split('.').reduce((o, p) => o[p], cm));
+  form.innerHTML = `
+    <div class="cfg-grid">
+      ${flatKeys().map((k) => `
+        <label class="cfg-field">
+          <span class="cfg-label">${esc(COLMAP_LABELS[k])}</span>
+          <input class="cuenta-input cfg-input" data-key="${k}" type="${k === 'headerRow' ? 'number' : 'text'}" value="${esc(val(k))}" />
+        </label>`).join('')}
+    </div>
+    <div class="bud-toolbar">
+      <button class="header-btn" id="colmapSave">Guardar formato</button>
+      <button class="header-btn" id="colmapReset">Volver al formato de Spendee</button>
+      <span class="bud-note" id="colmapMsg" style="margin:0"></span>
+    </div>
+    <div class="bud-note">Escribí el nombre exacto del encabezado de tu Excel. Podés poner varias alternativas separadas por <strong>|</strong>. Si tu banco exporta una sola hoja con montos negativos para los gastos, poné el mismo nombre de hoja en gastos e ingresos.</div>`;
+}
+
+export function initUploadListeners() {
+  renderColmapForm();
+  document.getElementById('colmapForm')?.addEventListener('click', (e) => {
+    const msg = () => document.getElementById('colmapMsg');
+    if (e.target.id === 'colmapSave') {
+      const next = { sheets: {}, cols: {} };
+      document.querySelectorAll('#colmapForm .cfg-input').forEach((inp) => {
+        const [a, b] = inp.dataset.key.split('.');
+        if (a === 'headerRow') next.headerRow = Math.max(1, +inp.value || 2);
+        else next[a][b] = inp.value.trim();
+      });
+      store.set('colmap', next);
+      msg().textContent = 'Guardado. Se usa en la próxima carga.';
+    } else if (e.target.id === 'colmapReset') {
+      store.remove('colmap');
+      renderColmapForm();
+      msg().textContent = 'Restaurado.';
+    }
+  });
+
+  document.getElementById('savedFileBox')?.addEventListener('click', async (e) => {
+    if (e.target.id === 'savedContinue' && SESSION.current) loadData(SESSION.current.raw);
+    if (e.target.id === 'savedForget' && confirm('¿Borrar el archivo guardado en este navegador? Tus saldos, topes y metas no se tocan.')) {
+      await forgetSnapshots();
+      renderSavedBox();
+    }
+  });
 }

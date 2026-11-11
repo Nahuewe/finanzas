@@ -5,12 +5,42 @@ import {
 import { buildMetrics } from './metrics.js';
 import { matcher } from './config.js';
 import { esc } from './helpers.js';
+import { store } from './storage.js';
+import { FX, marketRate } from './externalData.js';
 import { renderAll } from './renderers/index.js';
 import { buildExcludePanel } from './renderers/excludePanel.js';
 
+export const DEFAULT_FILTERS = { year: 'all', month: 'all', period: 'all', account: 'all', category: 'all', minAmount: 0, from: '', to: '', text: '' };
+
+/** Cantidad de filtros distintos del valor por defecto (para el botón de filtros en celular). */
+export const activeFilterCount = () => Object.keys(DEFAULT_FILTERS).filter((k) => FILTERS[k] !== DEFAULT_FILTERS[k] && FILTERS[k] !== undefined).length;
+
 export function applyFilters() {
-  let gasto = RAW.gastos.filter((r) => !SKIP_CATS.has(r.cat));
-  let ingreso = [...RAW.ingresos];
+  // opcional: valuar en pesos las operaciones en USD al dólar de mercado del día (en vez del tipo de cambio que cargó la app)
+  const revalue = store.get('fxRevalue', false) && FX.state === 'ok';
+  const reval = (r) => {
+    if (!revalue || !r.usd) return r;
+    const { rate } = marketRate(r.fecha, r.comentario);
+    return rate ? { ...r, monto: r.usd * rate, montoOriginal: r.monto } : r;
+  };
+
+  let gasto = RAW.gastos.filter((r) => !SKIP_CATS.has(r.cat)).map(reval);
+  let ingreso = RAW.ingresos.map(reval);
+
+  if (FILTERS.from) {
+    gasto = gasto.filter((r) => r.fecha >= FILTERS.from);
+    ingreso = ingreso.filter((r) => r.fecha >= FILTERS.from);
+  }
+  if (FILTERS.to) {
+    gasto = gasto.filter((r) => r.fecha <= FILTERS.to);
+    ingreso = ingreso.filter((r) => r.fecha <= FILTERS.to);
+  }
+  if (FILTERS.text) {
+    const q = FILTERS.text.toLowerCase();
+    const hit = (r) => `${r.comentario} ${r.cat} ${r.cuenta}`.toLowerCase().includes(q);
+    gasto = gasto.filter(hit);
+    ingreso = ingreso.filter(hit);
+  }
 
   if (EXCLUDED_ACCOUNTS.size > 0) {
     gasto = gasto.filter((r) => !EXCLUDED_ACCOUNTS.has(r.cuenta));
@@ -64,6 +94,10 @@ export function applyFilters() {
   document.getElementById('dateRangeLabel').textContent =
     all.length ? `${all[0]} → ${all[all.length - 1]}` : 'sin resultados';
 
+  const n = activeFilterCount();
+  const tog = document.getElementById('filtersToggle');
+  if (tog) tog.textContent = n ? `⚙ Filtros (${n})` : '⚙ Filtros';
+
   OPEN_CATS.clear();
   renderAll();
 }
@@ -77,7 +111,8 @@ export function refreshExclusions() {
 }
 
 export function resetFilters() {
-  setFilters({ year: 'all', month: 'all', period: 'all', account: 'all', category: 'all', minAmount: 0 });
+  setFilters({ ...DEFAULT_FILTERS });
+  ['filterFrom', 'filterTo', 'filterText'].forEach((id) => { document.getElementById(id).value = ''; });
   document.getElementById('filterYear').value = 'all';
   document.getElementById('filterAccount').value = 'all';
   document.getElementById('filterCategory').value = 'all';

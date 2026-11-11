@@ -15,8 +15,13 @@ import Layout from '../layouts/Layout.astro';
       <p><strong>Tocá o arrastrá tu archivo</strong><br />.xlsx con hojas Gastos / Ingresos / Transferencias</p>
     </div>
 
+    <div id="savedFileBox"></div>
     <button class="demo-btn" id="demoBtn">▶ Usar datos de demo</button>
 
+    <details class="cfg-box" style="margin-top:18px;max-width:720px;width:100%">
+      <summary>⚙ Mi Excel tiene otro formato (mapeo de columnas)</summary>
+      <div id="colmapForm"></div>
+    </details>
     <div class="upload-spec">
       <span class="spec-chip">Fecha y hora</span>
       <span class="spec-chip">Categoría</span>
@@ -36,7 +41,12 @@ import Layout from '../layouts/Layout.astro';
       <button class="header-btn" id="reloadBtn">↑ Nuevo archivo</button>
     </header>
 
-    <div class="filters-bar">
+    <div class="mobile-bar">
+      <select class="filter-select" id="tabSelect" aria-label="Sección"></select>
+      <button class="header-btn" id="filtersToggle">⚙ Filtros</button>
+    </div>
+
+    <div class="filters-bar" id="filtersBar">
       <span class="filter-label">AÑO</span>
       <select class="filter-select narrow" id="filterYear"><option value="all">Todos</option></select>
       <span class="filter-label">MES</span>
@@ -51,6 +61,12 @@ import Layout from '../layouts/Layout.astro';
       <select class="filter-select" id="filterAccount"><option value="all">Todas</option></select>
       <span class="filter-label">CATEGORÍA</span>
       <select class="filter-select" id="filterCategory"><option value="all">Todas</option></select>
+      <span class="filter-label">DESDE</span>
+      <input class="filter-select" id="filterFrom" type="date" />
+      <span class="filter-label">HASTA</span>
+      <input class="filter-select" id="filterTo" type="date" />
+      <span class="filter-label">BUSCAR</span>
+      <input class="filter-select" id="filterText" type="search" placeholder="comentario, categoría…" />
       <span class="filter-label">MONTO MÍN.</span>
       <input class="filter-select narrow" id="filterMinAmount" type="number" placeholder="$0" min="0" step="1000" />
       <div class="sep"></div>
@@ -68,6 +84,7 @@ import Layout from '../layouts/Layout.astro';
       <button class="tab-btn" data-tab="proyeccion">Proyección</button>
       <button class="tab-btn" data-tab="ahorros"> Ahorros<span class="stamp" id="alertCount" style="color:var(--red)">0</span></button>
       <button class="tab-btn" data-tab="presupuesto">Presupuesto</button>
+      <button class="tab-btn" data-tab="metas">Metas</button>
       <button class="tab-btn" data-tab="analisis">Análisis</button>
       <button class="tab-btn" data-tab="patrimonio">Patrimonio</button>
       <button class="tab-btn" data-tab="habitos">Hábitos</button>
@@ -77,6 +94,7 @@ import Layout from '../layouts/Layout.astro';
 
     <!-- ── RESUMEN ── -->
     <div class="page active" id="page-resumen">
+      <div id="fileDiff"></div>
       <div class="kpi-grid" id="kpiResumen"></div>
       <div class="card card-mb">
         <h3>Ingresos vs Gastos</h3>
@@ -183,12 +201,13 @@ import Layout from '../layouts/Layout.astro';
     <!-- ── PROYECCIÓN ── -->
     <div class="page" id="page-proyeccion">
       <div class="kpi-grid" id="kpiProyeccion"></div>
+      <div class="bud-toolbar"><label class="cuenta-field-label" for="projInfl">Inflación mensual esperada %</label><input class="cuenta-input" id="projInfl" type="number" min="0" step="0.1" style="width:90px" /><span class="bud-note" id="projInflNote" style="margin:0"></span></div>
       <div class="card card-mb">
-        <h3>Histórico + Proyección 6 meses</h3>
+        <h3>Histórico + Proyección 6 meses (escenario base)</h3>
         <canvas id="chartProyeccion"></canvas>
       </div>
       <div class="card card-mb">
-        <h3>Neto Acumulado Proyectado</h3>
+        <h3>Neto acumulado proyectado: 3 escenarios</h3>
         <canvas id="chartAcumuladoProy"></canvas>
       </div>
       <div class="card">
@@ -222,9 +241,11 @@ import Layout from '../layouts/Layout.astro';
         <div class="bud-toolbar">
           <label class="cuenta-field-label" for="budMonth">Mes</label>
           <select class="filter-select narrow" id="budMonth"></select>
+          <label class="cuenta-field-label"><input type="checkbox" id="budAuto" /> Ajustar topes por inflación</label>
           <button class="header-btn" id="budSuggestBtn">✨ Sugerir topes (prom. 3 meses +5%)</button>
           <button class="header-btn" id="budClearBtn">✕ Borrar topes</button>
         </div>
+        <div class="bud-note" id="budAutoNote"></div>
         <div class="tbl-scroll" id="presupuestoTabla"></div>
       </div>
       <div class="grid-2">
@@ -232,6 +253,24 @@ import Layout from '../layouts/Layout.astro';
         <div class="card"><h3>Gastos fijos detectados</h3><div id="fijosList"></div></div>
       </div>
       <div class="card card-mb"><h3>Colchón financiero</h3><div id="runwayBox"></div></div>
+    </div>
+
+    <!-- ── METAS ── -->
+    <div class="page" id="page-metas">
+      <div class="sec-title">🎯 Metas de ahorro</div>
+      <form class="card card-mb meta-form" id="metaForm">
+        <h3>Nueva meta</h3>
+        <div class="cfg-grid">
+          <label class="cfg-field"><span class="cfg-label">Nombre</span><input class="cuenta-input cfg-input" id="metaNombre" type="text" placeholder="Viajesito" required /></label>
+          <label class="cfg-field"><span class="cfg-label">Monto objetivo</span><input class="cuenta-input cfg-input" id="metaObjetivo" type="number" min="1" step="any" placeholder="3000" required /></label>
+          <label class="cfg-field"><span class="cfg-label">Moneda</span><select class="filter-select cfg-input" id="metaMoneda"><option value="ARS">Pesos (ARS)</option><option value="USD">Dólares (USD)</option></select></label>
+          <label class="cfg-field"><span class="cfg-label">Fecha límite (opcional)</span><input class="cuenta-input cfg-input" id="metaFecha" type="date" /></label>
+          <label class="cfg-field"><span class="cfg-label">Cuenta donde ahorrás (opcional)</span><select class="filter-select cfg-input" id="metaCuenta"></select></label>
+          <label class="cfg-field"><span class="cfg-label">Ya ahorrado, si no elegís cuenta</span><input class="cuenta-input cfg-input" id="metaActual" type="number" min="0" step="any" placeholder="0" /></label>
+        </div>
+        <div class="bud-toolbar"><button class="header-btn" type="submit">＋ Agregar meta</button><span class="bud-note" style="margin:0">Si elegís una cuenta con saldo cargado en Cuentas, el avance se calcula solo con sus movimientos.</span></div>
+      </form>
+      <div id="metasList" class="metas-list"></div>
     </div>
 
     <!-- ── ANALISIS ── -->
@@ -267,7 +306,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="card"><h3>Compras de USD: precio pagado vs mercado</h3><canvas id="chartUsdCompras"></canvas></div>
       </div>
       <div class="card card-mb"><h3>Últimas compras de dólares</h3><div id="usdComprasList"></div></div>
-      <div class="card card-mb"><h3>Auditoría de conversiones USD ↔ pesos</h3><div class="bud-note" id="usdAuditNote"></div><div class="tbl-scroll" id="usdAudit" style="max-height:420px;overflow-y:auto"></div></div>
+      <div class="card card-mb"><h3>Auditoría de conversiones USD ↔ pesos</h3><div class="bud-note" id="usdAuditNote"></div><label class="cuenta-field-label" style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input type="checkbox" id="fxRevalue" /> Valuar en pesos las operaciones en dólares al dólar de mercado del día (corrige montos cargados con un tipo de cambio viejo; afecta todos los gráficos)</label><div class="tbl-scroll" id="usdAudit" style="max-height:420px;overflow-y:auto"></div></div>
     </div>
 
     <!-- ── HABITOS ── -->
@@ -306,6 +345,7 @@ import Layout from '../layouts/Layout.astro';
 
   <div id="reportOverlay" class="report-overlay" hidden>
     <div class="report-bar">
+      <select class="filter-select" id="reportType"><option value="mensual">Mensual</option><option value="anual">Anual</option></select>
       <select class="filter-select" id="reportMonth"></select>
       <button class="header-btn" id="reportPrint">🖨 Imprimir / guardar PDF</button>
       <button class="header-btn" id="reportClose">✕ Cerrar</button>

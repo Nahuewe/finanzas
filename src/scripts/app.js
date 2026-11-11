@@ -2,7 +2,10 @@ import { FILTERS, setFilters, setCatSearch, setRaw, FILTERED, setExcludedGasCats
 import { applyFilters, resetFilters, buildMonthOptions } from './filters.js';
 import { renderCatAccordion } from './renderers/gastos.js';
 import { groupBy, groupByMon, sortedEntries } from './helpers.js';
-import { processFile, initApp } from './upload.js';
+import { processFile, initApp, loadData, initUploadListeners, renderSavedBox } from './upload.js';
+import { loadSnapshot, SESSION } from './persist.js';
+import { initProyeccionListeners } from './renderers/proyeccion.js';
+import { initMetasListeners } from './renderers/metas.js';
 import { DEMO_DATA } from './demo.js';
 import { initComentariosListeners } from './renderers/comentarios.js';
 import { initAnalisisListeners, exportCSV } from './renderers/analisis.js';
@@ -12,7 +15,7 @@ import { initCuentasListeners } from './renderers/cuentas.js';
 import { initGastosListeners } from './renderers/gastos.js';
 import { initAhorrosListeners } from './renderers/ahorros.js';
 import { initReportListeners } from './renderers/report.js';
-import { loadInflation, loadFx } from './externalData.js';
+import { loadInflation, loadFx, loadFxOthers } from './externalData.js';
 import { refreshExclusions } from './filters.js';
 import { initThemes } from './themes.js';
 
@@ -33,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('demoBtn').addEventListener('click', () => {
+    SESSION.current = SESSION.previous = null;
     setRaw(DEMO_DATA);
     setExcludedGasCats(new Set());
     setExcludedIngCats(new Set());
@@ -43,6 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('app').style.display = 'none';
     document.getElementById('uploadScreen').style.display = 'flex';
     setRaw({ gastos: [], ingresos: [], transferencias: [] });
+    loadSnapshot().then(renderSavedBox);
+  });
+
+  // rango de fechas libre y búsqueda de texto (aplican a todas las pestañas)
+  ['filterFrom', 'filterTo'].forEach((id) => document.getElementById(id).addEventListener('change', (e) => {
+    setFilters({ ...FILTERS, [id === 'filterFrom' ? 'from' : 'to']: e.target.value });
+    applyFilters();
+  }));
+  let textTimer;
+  document.getElementById('filterText').addEventListener('input', (e) => {
+    clearTimeout(textTimer);
+    textTimer = setTimeout(() => { setFilters({ ...FILTERS, text: e.target.value.trim() }); applyFilters(); }, 300);
   });
 
   document.getElementById('filterYear').addEventListener('change', (e) => {
@@ -92,13 +108,20 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCatAccordion(g, sortedEntries(groupBy(g, 'cat')), g.reduce((a, r) => a + r.monto, 0), Object.keys(groupByMon(g)).sort());
   });
 
-  document.querySelectorAll('.tab-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-      document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('page-' + btn.dataset.tab).classList.add('active');
-    });
+  // pestañas: barra en escritorio, menú desplegable en celular (los dos quedan sincronizados)
+  const tabSelect = document.getElementById('tabSelect');
+  const tabs = [...document.querySelectorAll('.tab-btn')];
+  tabSelect.innerHTML = tabs.map((b) => `<option value="${b.dataset.tab}">${b.firstChild.textContent.trim()}</option>`).join('');
+  const activateTab = (name) => {
+    tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + name));
+    tabSelect.value = name;
+  };
+  tabs.forEach((btn) => btn.addEventListener('click', () => activateTab(btn.dataset.tab)));
+  tabSelect.addEventListener('change', (e) => { activateTab(e.target.value); window.scrollTo(0, 0); });
+
+  document.getElementById('filtersToggle').addEventListener('click', () => {
+    document.getElementById('filtersBar').classList.toggle('open');
   });
 
   const excludeToggle = document.getElementById('excludeToggle');
@@ -119,11 +142,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initAhorrosListeners();
   initReportListeners();
   initThemes();
+  initProyeccionListeners();
+  initMetasListeners();
+  initUploadListeners();
+
+  // si hay un archivo guardado en este navegador, se abre directo
+  loadSnapshot().then((snap) => { if (snap) loadData(snap.raw); });
 
   // las reglas y los datos externos (inflación, dólar) re-renderizan todo cuando cambian
   const refresh = () => { if (document.getElementById('app').style.display === 'block') applyFilters(); };
   document.addEventListener('config-changed', () => { refreshExclusions(); refresh(); });
   document.addEventListener('external-data', refresh);
-  Promise.all([loadInflation(), loadFx()]).then(refresh);
+  Promise.all([loadInflation(), loadFx()]).then(refresh).then(loadFxOthers).then(refresh);
   document.getElementById('exportBtn').addEventListener('click', exportCSV);
 });

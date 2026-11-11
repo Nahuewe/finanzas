@@ -58,34 +58,63 @@ export function inflBetween(from, to, fallback = 0) {
 
 // ── Dólar ──
 export const CASAS = { bolsa: 'MEP', blue: 'Blue', oficial: 'Oficial' };
-export const FX = { casa: store.get('fxCasa', 'bolsa'), monthly: {}, daily: {}, days: [], last: null, state: 'cargando' };
+const EMPTY_FX = () => ({ monthly: {}, daily: {}, days: [], last: null });
 
-export async function loadFx(casa = FX.casa) {
-  FX.casa = casa;
-  store.set('fxCasa', casa);
-  FX.state = 'cargando';
+/** Series por tipo de dólar. FX apunta siempre a la casa elegida por el usuario. */
+export const FXALL = {};
+export const FX = { casa: store.get('fxCasa', 'bolsa'), ...EMPTY_FX(), state: 'cargando' };
+
+async function loadCasa(casa) {
   const r = await cached(`fx2_${casa}`, `${BASE}/cotizaciones/dolares/${casa}`, (rows) => {
     const monthly = {}, daily = {};
     rows.forEach((x) => { if (x.fecha >= '2018') { monthly[x.fecha.slice(0, 7)] = x.venta; daily[x.fecha] = x.venta; } });
     const last = rows.at(-1);
     return { monthly, daily, last: last ? { fecha: last.fecha, venta: last.venta } : null };
   });
-  FX.monthly = r.data?.monthly || {};
-  FX.daily = r.data?.daily || {};
-  FX.days = Object.keys(FX.daily).sort();
-  FX.last = r.data?.last || null;
-  FX.state = r.ok ? 'ok' : 'error';
+  FXALL[casa] = r.data ? { ...r.data, days: Object.keys(r.data.daily || {}).sort() } : EMPTY_FX();
+  return r.ok;
 }
 
-/** Cotización del día (o del día hábil anterior más cercano). */
-export function fxOnDay(fecha) {
-  if (FX.daily[fecha]) return FX.daily[fecha];
-  let lo = 0, hi = FX.days.length - 1, best = -1;
+export async function loadFx(casa = FX.casa) {
+  FX.casa = casa;
+  store.set('fxCasa', casa);
+  FX.state = 'cargando';
+  const ok = await loadCasa(casa);
+  Object.assign(FX, FXALL[casa]);
+  FX.state = ok ? 'ok' : 'error';
+}
+
+/** Carga en segundo plano los otros tipos de dólar (para auditar operaciones "OFICIAL", "MEP", "BLUE"). */
+export async function loadFxOthers() {
+  await Promise.all(Object.keys(CASAS).filter((c) => !FXALL[c]).map(loadCasa));
+}
+
+/** Tipo de dólar mencionado en un texto ("200 dolares OFICIAL" → 'oficial'), o null. */
+export function casaFromText(text) {
+  const t = String(text || '').toLowerCase();
+  if (/\boficial\b/.test(t)) return 'oficial';
+  if (/\bmep\b|\bbolsa\b/.test(t)) return 'bolsa';
+  if (/\bblue\b/.test(t)) return 'blue';
+  return null;
+}
+
+/** Cotización del día (o del día hábil anterior más cercano) para la casa indicada. */
+export function fxOnDay(fecha, casa = FX.casa) {
+  const d = FXALL[casa] || FX;
+  if (d.daily[fecha]) return d.daily[fecha];
+  let lo = 0, hi = d.days.length - 1, best = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
-    if (FX.days[mid] <= fecha) { best = mid; lo = mid + 1; } else hi = mid - 1;
+    if (d.days[mid] <= fecha) { best = mid; lo = mid + 1; } else hi = mid - 1;
   }
-  return best >= 0 ? FX.daily[FX.days[best]] : 0;
+  return best >= 0 ? d.daily[d.days[best]] : 0;
+}
+
+/** Cotización de mercado para una operación: usa el tipo de dólar que diga el comentario, si lo dice. */
+export function marketRate(fecha, text) {
+  const hinted = casaFromText(text);
+  const casa = hinted && FXALL[hinted]?.days.length ? hinted : FX.casa;
+  return { casa, rate: fxOnDay(fecha, casa) };
 }
 
 /** Cotización de fin de mes (o la más cercana anterior). */
